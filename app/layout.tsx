@@ -19,12 +19,12 @@ export const metadata: Metadata = {
   other: {
     "fc:miniapp": JSON.stringify({
       version: "next",
-      imageUrl: "https://base-market-cap.vercel.app/preview.png",
+      imageUrl: "https://basecap-calculator.vercel.app/preview.png",
       button: {
         title: "Launch Calculator",
         action: {
           type: "launch_frame",
-          url: "https://base-market-cap.vercel.app",
+          url: "https://basecap-calculator.vercel.app",
         },
       },
     }),
