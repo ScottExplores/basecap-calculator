@@ -11,23 +11,23 @@ interface AmountInputProps {
 
 export function AmountInput({ amount, onChange, symbol }: AmountInputProps) {
     return (
-        <div className="w-full relative group">
-            <div className="bg-slate-900 border border-slate-700 focus-within:border-blue-500 rounded-xl p-4 w-full flex items-center gap-4 transition-all shadow-lg min-h-[80px]">
-                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700/50">
-                    <LayoutGrid className="w-5 h-5 text-slate-400" />
-                </div>
-                <div className="flex flex-col flex-grow">
-                    <span className="text-xs text-slate-500 font-bold uppercase mb-1">
-                        Amount of {symbol || 'Tokens'}
-                    </span>
+        <div className="w-full">
+            <div className="relative group">
+                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest absolute -top-2.5 left-3 bg-white dark:bg-slate-900 px-2 rounded z-10 transition-colors">Amount</label>
+                <div className="flex items-center bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500 transition-all shadow-sm">
                     <input
                         type="number"
-                        min="0"
                         value={amount}
                         onChange={(e) => onChange(e.target.value)}
+                        className="bg-transparent text-xl md:text-2xl font-black text-slate-900 dark:text-white focus:outline-none w-full placeholder-slate-400 dark:placeholder-slate-700"
                         placeholder="1"
-                        className="bg-transparent text-2xl font-bold text-white placeholder-slate-600 focus:outline-none w-full appearance-none"
+                        min="0"
                     />
+                    {symbol && (
+                        <div className="flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-800 ml-2">
+                            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{symbol.toUpperCase()}</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

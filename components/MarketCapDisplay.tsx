@@ -31,8 +31,22 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange }:
     const totalValue = projectedPricePerToken * amount;
 
     const isUpside = multiplier >= 1;
-    const xValue = multiplier.toFixed(2);
-    const percentChange = ((multiplier - 1) * 100).toFixed(0);
+    const xValue = multiplier.toFixed(2); // Growth multiplier (e.g. 4.82x)
+
+    // Relative Ratio for "Under/Above" text (e.g. 0.21x)
+    const relativeRatio = (mcapA / targetMcapB);
+    const relativeRatioDisplay = relativeRatio < 1 ? relativeRatio.toFixed(2) : relativeRatio.toFixed(2);
+
+    // Logic: If A is smaller than B (ratio < 1), it is "0.21x UNDER". 
+    // If A is bigger (ratio > 1), it is "1.5x ABOVE" (or just show ratio).
+    const isUnder = relativeRatio < 1;
+
+    // Helper to resolve image (copied from TokenInput, ideally shared)
+    const resolveImage = (img: any): string => {
+        if (!img) return '';
+        if (typeof img === 'string') return img;
+        return img.large || img.thumb || img.small || '';
+    };
 
     const formatMoney = (p: number) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(p);
@@ -71,60 +85,86 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange }:
                 {tokenA.symbol.toUpperCase()} WITH THE MARKET CAP OF {tokenB.symbol.toUpperCase()}
             </h3>
 
-            {/* Big Price */}
-            <div className="flex items-baseline gap-3 mb-8">
-                <span className="text-5xl md:text-6xl font-black text-white drop-shadow-lg">
-                    {formatMoney(totalValue / amount)} {/* Price per token implied */}
-                </span>
-                <span className={clsx("text-2xl font-bold", isUpside ? "text-green-400" : "text-red-400")}>
-                    ({xValue}x)
+            {/* Equation */}
+            <div className="text-center mb-8">
+                <span className="text-xl md:text-2xl font-bold tracking-wider uppercase text-slate-300">
+                    <span className="text-blue-400">{tokenA.symbol.toUpperCase()}</span> IS <span className={isUnder ? "text-red-400" : "text-green-400"}>{relativeRatioDisplay}X</span> {isUnder ? "UNDER" : "ABOVE"} <span className="text-violet-400">{tokenB.symbol.toUpperCase()}</span>
                 </span>
             </div>
 
-            {/* Amount Input */}
-            <div className="w-full max-w-md mb-8 z-10">
-                {onAmountChange && (
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+
+                {/* Token A Input Amount */}
+                <div className="flex flex-col gap-2 w-full md:w-auto min-w-[200px]">
                     <AmountInput
                         amount={amount}
-                        onChange={onAmountChange}
-                        symbol={tokenA.symbol.toUpperCase()}
+                        onChange={onAmountChange || (() => { })}
+                        symbol={tokenA ? tokenA.symbol : 'TOKEN'}
                     />
-                )}
-            </div>
-
-            {/* Equation */}
-            <div className="text-center mb-6">
-                <span className="text-xl md:text-3xl font-bold tracking-wider">
-                    <span className="text-blue-400">{tokenA.symbol.toUpperCase()}</span> IS <span className={isUpside ? "text-green-400" : "text-red-400"}>{xValue}X</span> {isUpside ? "ABOVE" : "UNDER"} <span className="text-violet-400">{tokenB.symbol.toUpperCase()}</span>
-                </span>
-            </div>
-
-            {/* Visual Progress Bars */}
-            <div className="w-full max-w-lg mb-8 space-y-3">
-                {/* Bar A */}
-                <div className="w-full flex items-center gap-4">
-                    <div className="flex-grow h-3 bg-slate-700/50 rounded-full overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: isUpside ? '100%' : `${multiplier * 100}%` }}
-                            className={clsx("h-full rounded-full", isUpside ? "bg-green-500" : "bg-red-500")}
-                        />
+                    <div className="text-sm text-slate-500 dark:text-slate-500 pl-2">
+                        Current Value: <span className="font-mono text-slate-900 dark:text-slate-300 font-bold">${(projectedPricePerToken * amount / multiplier).toLocaleString()}</span>
                     </div>
-                    <div className="w-24 text-right font-mono text-xs text-slate-400">{tokenA.symbol}</div>
-                    <div className={clsx("w-24 font-mono text-sm text-right", isUpside ? "text-green-400" : "text-red-400")}>{formatMcap(mcapA)}</div>
                 </div>
 
-                {/* Bar B */}
-                <div className="w-full flex items-center gap-4">
-                    <div className="flex-grow h-3 bg-slate-700/50 rounded-full overflow-hidden">
+
+
+                {/* Result Price */}
+                <div className="flex flex-col items-center md:items-end text-center md:text-right">
+                    <div className="text-sm font-bold text-blue-700 dark:text-blue-400 mb-1 tracking-wider uppercase">Projected Value</div>
+                    <div className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-violet-700 dark:from-white dark:to-slate-200 tracking-tighter filter drop-shadow-sm">
+                        {formatMoney(totalValue)}
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                        <div className={clsx("px-3 py-1 rounded-full text-sm font-bold border",
+                            multiplier > 1 ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20" : "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+                        )}>
+                            {multiplier.toFixed(2)}x
+                        </div>
+                        <span className="text-slate-600 dark:text-slate-400 text-sm font-medium">potential upside</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Visual Bar Graph */}
+            <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto mt-8">
+                {/* Bar A */}
+                <div className="space-y-2">
+                    <div className="flex justify-between text-sm mobile-text-adjust">
+                        <span className="font-bold text-slate-700 dark:text-slate-200">{tokenA.symbol.toUpperCase()} NOW</span>
+                        <span className="font-mono text-slate-500 dark:text-slate-400">{formatMcap(mcapA)}</span>
+                    </div>
+                    <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative border border-slate-200 dark:border-slate-700">
                         <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: isUpside ? `${(1 / multiplier) * 100}%` : '100%' }} // If A is upside (bigger), B is smaller relative to A.
-                            className="h-full bg-violet-500 rounded-full"
-                        />
+                            animate={{ width: `${(mcapA / Math.max(mcapA, targetMcapB)) * 100}%` }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="h-full bg-blue-500 dark:bg-blue-500 relative"
+                        >
+                            <div className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                                <img src={resolveImage(tokenA.image)} className="w-full h-full object-cover" />
+                            </div>
+                        </motion.div>
                     </div>
-                    <div className="w-24 text-right font-mono text-xs text-slate-400">{tokenB.symbol}</div>
-                    <div className="w-24 font-mono text-sm text-right text-violet-400">{formatMcap(targetMcapB)}</div>
+                </div>
+
+                {/* Bar B (Target) */}
+                <div className="space-y-2 opacity-50">
+                    <div className="flex justify-between text-sm mobile-text-adjust">
+                        <span className="font-bold text-slate-700 dark:text-slate-200">{tokenB.symbol.toUpperCase()} NOW</span>
+                        <span className="font-mono text-slate-500 dark:text-slate-400">{formatMcap(targetMcapB)}</span>
+                    </div>
+                    <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative border border-slate-200 dark:border-slate-700">
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(targetMcapB / Math.max(mcapA, targetMcapB)) * 100}%` }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="h-full bg-violet-500 dark:bg-violet-500 relative"
+                        >
+                            <div className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                                <img src={resolveImage(tokenB.image)} className="w-full h-full object-cover" />
+                            </div>
+                        </motion.div>
+                    </div>
                 </div>
             </div>
 

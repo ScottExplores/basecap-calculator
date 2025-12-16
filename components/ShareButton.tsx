@@ -1,8 +1,9 @@
 'use client';
 
-import { Share2, Check, Copy } from 'lucide-react';
+import { Share2, Check } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
+import sdk from '@farcaster/miniapp-sdk';
 
 interface ShareButtonProps {
     tokenA: string;
@@ -15,27 +16,30 @@ export function ShareButton({ tokenA, tokenB, price, multiplier }: ShareButtonPr
     const [copied, setCopied] = useState(false);
 
     const handleShare = async () => {
-        const text = `${tokenA} with the market cap of ${tokenB} is ${price} (${multiplier}x)! 🚀 Checked on Base Market Cap.`;
-        const url = window.location.href;
+        const text = `${tokenA} with the market cap of ${tokenB} is ${price} (${multiplier}x)! 🚀 Checked on Base Market Cap app.`;
+        const url = window.location.href; // Or a specific canonical URL if needed
 
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: 'Market Cap Calculator',
-                    text: text,
-                    url: url,
-                });
-            } catch (err) {
-                console.log('Share canceled', err);
-            }
-        } else {
+        try {
+            // Attempt to use Farcaster SDK first
+            // Note: The specific method might be addCast or just via intent if strictly miniapp
+            // We'll try the intent URL method as a primary robust fallback for "miniapps" which often just open the composer
+
+            // Standard Warpcast Intent (works in web and mobile app usually)
+            const intentUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(url)}`;
+
+            // If we are in the SDK context, native actions are preferred, but intent links are universally supported for now
+            // until we confirm exact SDK method support for "createCast" in this version.
+            window.open(intentUrl, '_blank');
+
+        } catch (err) {
+            console.error('Share failed', err);
             // Fallback to clipboard
             try {
                 await navigator.clipboard.writeText(`${text} ${url}`);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
-            } catch (err) {
-                console.error('Failed to copy', err);
+            } catch (clipboardErr) {
+                console.error('Clipboard failed', clipboardErr);
             }
         }
     };
@@ -47,11 +51,11 @@ export function ShareButton({ tokenA, tokenB, price, multiplier }: ShareButtonPr
                 "flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all transform active:scale-95 shadow-lg border",
                 copied
                     ? "bg-green-500/20 text-green-400 border-green-500/50"
-                    : "bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700 hover:text-white"
+                    : "bg-blue-600 text-white border-blue-500 hover:bg-blue-500"
             )}
         >
             {copied ? <Check className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}
-            <span>{copied ? 'Copied!' : 'Share Result'}</span>
+            <span>{copied ? 'Copied!' : 'Share on Farcaster'}</span>
         </button>
     );
 }
