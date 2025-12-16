@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTopTokens } from '@/hooks/useTopTokens';
 import { useAccount } from 'wagmi';
 import { useWalletTokens } from '@/hooks/useWalletTokens';
+import { useMoxieSearch } from '@/hooks/useMoxieSearch';
 import clsx from 'clsx';
 
 // User requested specific defaults
@@ -26,6 +27,40 @@ interface TokenInputProps {
 
 type TabType = 'crypto' | 'contracts' | 'wallet'; // Removed stocks
 
+// Internal component to handle image fallback state preventing transparent bleed-through
+function TokenImage({ token }: { token: any }) {
+    const [error, setError] = useState(false);
+
+    // Resolve helper (duplicated to avoid scoped complexity or move out)
+    const resolve = (img: any) => {
+        if (!img) return '';
+        if (typeof img === 'string') return img;
+        return img.large || img.thumb || img.small || '';
+    };
+
+    const defaultLogo = DEFAULT_LOGOS[token.symbol?.toLowerCase()];
+    // Prioritize Default -> Token Image
+    // Use token.image from wallet (which might include proper DexScreener url now)
+    const src = defaultLogo || resolve(token.image);
+
+    if (!error && src) {
+        return (
+            <img
+                src={src}
+                alt={token.symbol}
+                className="w-10 h-10 rounded-full object-cover bg-white dark:bg-slate-800"
+                onError={() => setError(true)}
+            />
+        );
+    }
+
+    return (
+        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 flex-shrink-0">
+            <span className="font-bold text-slate-500 dark:text-slate-400">{token.symbol?.[0]}</span>
+        </div>
+    );
+}
+
 export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputProps) {
     const [query, setQuery] = useState('');
     const [activeTab, setActiveTab] = useState<TabType>('crypto');
@@ -39,7 +74,14 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     // Data Hooks
     const { data: searchResults } = useSearchTokens(query);
     const { data: topTokens } = useTopTokens();
-    const { data: contractToken } = useTokenContract(contractAddress, 'ethereum'); // Defaulting to Ethereum for now
+
+    // Contract Tab Logic: Check if input looks like a contract address
+    const isAddress = contractAddress.startsWith('0x') && contractAddress.length === 42;
+    const { data: contractToken } = useTokenContract(isAddress ? contractAddress : '', 'base');
+
+    // Moxie Search for usernames (only if not an address and has length)
+    // We reuse the same input state 'contractAddress' for this dual purpose
+    const { data: moxieTokens } = useMoxieSearch(!isAddress ? contractAddress : '');
 
     // Refs
     const inputRef = useRef<HTMLInputElement>(null);
@@ -98,8 +140,11 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
             {/* Main Display Box */}
             <div
                 onClick={() => {
-                    setIsOpen(true);
-                    setTimeout(() => inputRef.current?.focus(), 100);
+                    const nextState = !isOpen;
+                    setIsOpen(nextState);
+                    if (nextState) {
+                        setTimeout(() => inputRef.current?.focus(), 100);
+                    }
                 }}
                 className="cursor-pointer bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 rounded-xl p-3 w-full flex items-center justify-between transition-all shadow-lg hover:shadow-blue-500/10 h-[72px]"
             >
@@ -119,8 +164,12 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                             </div>
                         </div>
                         <div className="ml-auto flex flex-col items-end flex-shrink-0">
-                            {selectedToken.current_price && (
-                                <span className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">${selectedToken.current_price.toLocaleString()}</span>
+                            {selectedToken.current_price > 0 && (
+                                <span className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">
+                                    ${selectedToken.current_price < 0.01
+                                        ? selectedToken.current_price.toLocaleString(undefined, { maximumSignificantDigits: 6 })
+                                        : selectedToken.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
                             )}
                         </div>
                     </div>
@@ -187,7 +236,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                         ref={inputRef}
                                         type="text"
                                         className="w-full bg-white dark:bg-slate-950 text-slate-900 dark:text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 border border-slate-200 dark:border-slate-800 placeholder-slate-400 dark:placeholder-slate-600 text-sm font-mono"
-                                        placeholder="Enter contract address (0x...)"
+                                        placeholder="Enter contract address (0x...) or Farcaster username"
                                         value={contractAddress}
                                         onChange={(e) => setContractAddress(e.target.value)}
                                     />
@@ -210,21 +259,23 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                             {/* Wallet Tab Content */}
                             {activeTab === 'wallet' && (
                                 <div className="flex flex-col">
-                                    {walletTokens.length > 0 ? (
+                                    {(walletTokens && walletTokens.length > 0) ? (
                                         walletTokens.map((token: any) => (
                                             <button
                                                 key={token.id}
                                                 className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
                                                 onClick={() => handleSelect(token)}
                                             >
-                                                <img src={resolveImage(token.logoURI)} className="w-10 h-10 rounded-full" onError={(e: any) => e.currentTarget.style.display = 'none'} />
+                                                <TokenImage token={token} />
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-base">{token.symbol.toUpperCase()}</span>
                                                     <span className="text-xs text-slate-500 dark:text-slate-400">{token.name}</span>
                                                 </div>
                                                 <div className="ml-auto flex flex-col items-end">
-                                                    <span className="text-sm font-bold text-slate-900 dark:text-white">{parseFloat(token.balance).toFixed(4)}</span>
-                                                    <span className="text-xs text-slate-500">Balance</span>
+                                                    <span className="text-sm font-bold text-slate-900 dark:text-white">
+                                                        {token.valueUsd ? `$${token.valueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : parseFloat(token.balance).toFixed(4)}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500">{token.valueUsd ? `${parseFloat(token.balance).toFixed(4)} ${token.symbol}` : 'Balance'}</span>
                                                 </div>
                                             </button>
                                         ))
@@ -254,18 +305,43 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                 </div>
                             )}
 
-                            {activeTab === 'contracts' && contractToken && (
-                                <button
-                                    className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 bg-blue-50 dark:bg-blue-900/10"
-                                    onClick={() => handleSelect(contractToken)}
-                                >
-                                    <img src={resolveImage(contractToken.image)} className="w-10 h-10 rounded-full" />
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-base">{contractToken.symbol.toUpperCase()}</span>
-                                        <span className="text-xs text-slate-500 dark:text-slate-400">{contractToken.name}</span>
-                                    </div>
-                                    <span className="ml-auto text-xs font-mono text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 px-2 py-1 rounded">Contract Found</span>
-                                </button>
+                            {activeTab === 'contracts' && (
+                                <div className="flex flex-col">
+                                    {contractToken && (
+                                        <button
+                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 bg-blue-50 dark:bg-blue-900/10"
+                                            onClick={() => handleSelect(contractToken)}
+                                        >
+                                            <img src={resolveImage(contractToken.image)} className="w-10 h-10 rounded-full" />
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-base">{contractToken.symbol.toUpperCase()}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">{contractToken.name}</span>
+                                            </div>
+                                            <span className="ml-auto text-xs font-mono text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 px-2 py-1 rounded">Contract</span>
+                                        </button>
+                                    )}
+
+                                    {moxieTokens?.map((token) => (
+                                        <button
+                                            key={token.id}
+                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
+                                            onClick={() => handleSelect({ ...token, image: '' })} // Moxie tokens usually rely on default letter avatar if no image
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                                                <span className="font-bold text-slate-500 dark:text-slate-400">{token.symbol[0]}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-base">{token.name}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">{token.symbol}</span>
+                                            </div>
+                                            <span className="ml-auto text-xs font-mono text-blue-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Fan Token</span>
+                                        </button>
+                                    ))}
+
+                                    {!contractToken && (!moxieTokens || moxieTokens.length === 0) && contractAddress.length > 2 && (
+                                        <div className="p-6 text-center text-slate-500">No results found</div>
+                                    )}
+                                </div>
                             )}
 
 

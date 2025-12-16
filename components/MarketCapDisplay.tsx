@@ -11,9 +11,11 @@ interface MarketCapDisplayProps {
     tokenB: TokenData | null;
     amount?: number;
     onAmountChange?: (val: number | string) => void;
+    onSwapClick?: () => void;
+    userBalance?: string;
 }
 
-export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange }: MarketCapDisplayProps) {
+export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange, onSwapClick, userBalance }: MarketCapDisplayProps) {
     const [useATH, setUseATH] = useState(false);
 
     if (!tokenA || !tokenB) return null;
@@ -35,7 +37,12 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange }:
 
     // Relative Ratio for "Under/Above" text (e.g. 0.21x)
     const relativeRatio = (mcapA / targetMcapB);
-    const relativeRatioDisplay = relativeRatio < 1 ? relativeRatio.toFixed(2) : relativeRatio.toFixed(2);
+    const relativeRatioDisplay = relativeRatio < 0.01
+        ? relativeRatio.toExponential(2)
+        : relativeRatio.toFixed(2);
+
+    // Use simple string check for very small decimals to avoid scientific notation if preferred, or just more fixed digits
+    const displayMultiplier = multiplier < 0.01 ? multiplier.toPrecision(2) : multiplier.toFixed(2);
 
     // Logic: If A is smaller than B (ratio < 1), it is "0.21x UNDER". 
     // If A is bigger (ratio > 1), it is "1.5x ABOVE" (or just show ratio).
@@ -49,6 +56,8 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange }:
     };
 
     const formatMoney = (p: number) => {
+        if (p === 0) return '$0.00';
+        if (p < 0.01) return '$' + p.toLocaleString(undefined, { maximumSignificantDigits: 6 });
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(p);
     };
     const formatMcap = (m: number) => {
@@ -57,6 +66,16 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange }:
 
     return (
         <div className="w-full bg-slate-800/50 backdrop-blur-md rounded-3xl p-8 border border-slate-700 shadow-2xl flex flex-col items-center relative overflow-hidden">
+
+            {/* Swap Trigger */}
+            <div className="mb-6 z-20">
+                <button
+                    onClick={onSwapClick}
+                    className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-105"
+                >
+                    SWAP {tokenA.symbol.toUpperCase()} FOR {tokenB.symbol.toUpperCase()}
+                </button>
+            </div>
 
             {/* Toggle */}
             <div className="flex bg-slate-900 rounded-lg p-1 mb-6 border border-slate-700 z-10">
@@ -88,7 +107,7 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange }:
             {/* Equation */}
             <div className="text-center mb-8">
                 <span className="text-xl md:text-2xl font-bold tracking-wider uppercase text-slate-300">
-                    <span className="text-blue-400">{tokenA.symbol.toUpperCase()}</span> IS <span className={isUnder ? "text-red-400" : "text-green-400"}>{relativeRatioDisplay}X</span> {isUnder ? "UNDER" : "ABOVE"} <span className="text-violet-400">{tokenB.symbol.toUpperCase()}</span>
+                    <span className="text-blue-400">{tokenA.symbol.toUpperCase()}</span> IS <span className={isUnder ? "text-red-400" : "text-green-400"}>{displayMultiplier}X</span> {isUnder ? "UNDER" : "ABOVE"} <span className="text-violet-400">{tokenB.symbol.toUpperCase()}</span>
                 </span>
             </div>
 
@@ -100,6 +119,7 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange }:
                         amount={amount}
                         onChange={onAmountChange || (() => { })}
                         symbol={tokenA ? tokenA.symbol : 'TOKEN'}
+                        userBalance={userBalance}
                     />
                     <div className="text-sm text-slate-500 dark:text-slate-500 pl-2">
                         Current Value: <span className="font-mono text-slate-900 dark:text-slate-300 font-bold">${(projectedPricePerToken * amount / multiplier).toLocaleString()}</span>

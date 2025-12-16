@@ -6,7 +6,7 @@
     },
     "miniapp": {
         "version": "1",
-        "name": "Base Market Cap",
+        "name": "BaseCap Calculator",
         "homeUrl": "https://basecap-calculator.vercel.app",
         "iconUrl": "https://basecap-calculator.vercel.app/icon.png",
         "splashImageUrl": "https://basecap-calculator.vercel.app/splash.png",
@@ -25,7 +25,7 @@
         ],
         "heroImageUrl": "https://basecap-calculator.vercel.app/preview.png",
         "tagline": "Dream Big, Calculate Smart",
-        "ogTitle": "Base Market Cap Calculator",
+        "ogTitle": "BaseCap Calculator",
         "ogDescription": "What if your favorite token had the market cap of Bitcoin? Find out now.",
         "ogImageUrl": "https://basecap-calculator.vercel.app/preview.png",
         "noindex": false

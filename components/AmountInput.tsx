@@ -7,9 +7,10 @@ interface AmountInputProps {
     amount: number | string;
     onChange: (val: number | string) => void;
     symbol?: string;
+    userBalance?: string;
 }
 
-export function AmountInput({ amount, onChange, symbol }: AmountInputProps) {
+export function AmountInput({ amount, onChange, symbol, userBalance }: AmountInputProps) {
     return (
         <div className="w-full">
             <div className="relative group">
@@ -19,13 +20,22 @@ export function AmountInput({ amount, onChange, symbol }: AmountInputProps) {
                         type="number"
                         value={amount}
                         onChange={(e) => onChange(e.target.value)}
-                        className="bg-transparent text-xl md:text-2xl font-black text-slate-900 dark:text-white focus:outline-none w-full placeholder-slate-400 dark:placeholder-slate-700"
+                        onFocus={(e) => e.target.select()}
+                        className="bg-transparent text-xl md:text-2xl font-black text-slate-900 dark:text-white focus:outline-none w-full placeholder-slate-400 dark:placeholder-slate-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="1"
                         min="0"
                     />
                     {symbol && (
                         <div className="flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-800 ml-2">
                             <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{symbol.toUpperCase()}</span>
+                            {userBalance && (
+                                <button
+                                    onClick={() => onChange(userBalance)}
+                                    className="text-[10px] font-black bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                                >
+                                    MAX
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

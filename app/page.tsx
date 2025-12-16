@@ -1,7 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Wallet } from "@coinbase/onchainkit/wallet";
+import {
+  Wallet,
+  ConnectWallet,
+  WalletDropdown,
+  WalletDropdownDisconnect,
+  WalletDropdownBasename
+} from "@coinbase/onchainkit/wallet";
+import { Avatar, Name, Identity, Address } from "@coinbase/onchainkit/identity";
 import { TokenInput } from '@/components/TokenInput';
 import { MarketCapDisplay } from '@/components/MarketCapDisplay';
 import { ShareButton } from '@/components/ShareButton';
@@ -9,7 +16,9 @@ import { useTokenData } from '@/hooks/useTokenData';
 import sdk from '@farcaster/miniapp-sdk';
 import { Footer } from '@/components/Footer';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { SwapModal } from '@/components/SwapModal';
 import { ArrowRightLeft } from 'lucide-react';
+import { useWalletTokens } from '@/hooks/useWalletTokens';
 
 export default function Home() {
   // Initialize with ETH and BTC IDs
@@ -38,16 +47,54 @@ export default function Home() {
   };
 
 
+  // Swap Modal State
+  const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+
+  const { tokens: walletTokens } = useWalletTokens();
+  const userBalance = tokenA ? walletTokens.find(
+    t => (t.address && tokenA.address && t.address.toLowerCase() === tokenA.address.toLowerCase()) ||
+      (t.symbol.toLowerCase() === tokenA.symbol.toLowerCase())
+  )?.balance : undefined;
+
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col items-center p-4 md:p-8 font-sans selection:bg-blue-500/30 relative overflow-hidden transition-colors duration-300">
+
+      <SwapModal
+        isOpen={isSwapModalOpen}
+        onClose={() => setIsSwapModalOpen(false)}
+        tokenIn={tokenA || null}
+        tokenOut={tokenB || null}
+      />
 
       {/* Background Ambience */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 blur-[100px] rounded-full pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-600/20 blur-[100px] rounded-full pointer-events-none z-0" />
 
-      <div className="w-full flex justify-end mb-8 relative z-10 gap-4 items-center">
-        <ThemeToggle />
-        <Wallet className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 transition-all shadow-lg shadow-blue-500/20 border-0 rounded-full font-bold" />
+      <div className="w-full flex justify-between mb-8 relative z-10 gap-4 items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 relative bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.6)] border border-blue-400/30">
+          </div>
+          <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">BaseCap</span>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <Wallet>
+            <ConnectWallet className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 transition-all shadow-lg shadow-blue-500/20 border-0 rounded-full font-bold text-white px-4 py-2">
+              <Avatar className="h-6 w-6" />
+              <Name />
+            </ConnectWallet>
+            <WalletDropdown>
+              <Identity className="px-4 py-2 pt-3 pb-2" hasCopyAddressOnClick>
+                <Avatar />
+                <Name />
+                <Address />
+              </Identity>
+              <WalletDropdownBasename />
+              <WalletDropdownDisconnect />
+            </WalletDropdown>
+          </Wallet>
+        </div>
       </div>
 
       <div className="w-full max-w-5xl flex flex-col items-center justify-center relative z-10 gap-12 flex-grow">
@@ -99,6 +146,8 @@ export default function Home() {
             tokenB={tokenB || null}
             amount={Number(amount) || 1}
             onAmountChange={setAmount}
+            onSwapClick={() => setIsSwapModalOpen(true)}
+            userBalance={userBalance} // Passed balance
           />
           {(tokenA && tokenB) && (
             <ShareButton

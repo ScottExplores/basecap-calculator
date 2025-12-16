@@ -18,7 +18,8 @@ export function useTopTokens() {
                         sparkline: false,
                     },
                 });
-                return response.data as TokenData[];
+                const stablecoins = ['usdc', 'usdt', 'dai', 'tusd', 'fdusd'];
+                return (response.data as TokenData[]).filter(t => !stablecoins.includes(t.symbol.toLowerCase()));
             } catch (error) {
                 console.error("Error fetching top tokens:", error);
                 return [];
