@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Base Market Cap Calculator",
   description: "Visualize token prices with the market cap of others.",
   other: {
-    "base:app_id": "693919d6e6be54f5ed71d4ec",
+    "base:app_id": "693fc068d77c069a945bdef4",
     "fc:miniapp": JSON.stringify({
       version: "next",
       imageUrl: "https://basecap-calculator.vercel.app/preview.png",
