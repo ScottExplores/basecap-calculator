@@ -132,7 +132,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     // User requested "search section as the new default view" and "replace contracts with top 100"
 
     const orderedTabs: TabType[] = ['crypto', 'top100', 'wallet'];
-    const visibleTabs = isConnected ? orderedTabs : ['crypto', 'top100'];
+    const visibleTabs: TabType[] = isConnected ? orderedTabs : ['crypto', 'top100'];
 
     const displayImage = resolveImage(selectedToken?.image) || (selectedToken?.symbol && DEFAULT_LOGOS[selectedToken.symbol.toLowerCase()]);
 

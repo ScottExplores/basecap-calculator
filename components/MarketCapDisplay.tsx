@@ -68,21 +68,23 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange, o
     return (
         <div className="w-full bg-slate-800/50 backdrop-blur-md rounded-3xl p-8 border border-slate-700 shadow-2xl flex flex-col items-center relative overflow-hidden">
 
-            {/* Swap Trigger & Share */}
-            <div className="mb-6 z-20 flex items-center justify-center gap-4 flex-wrap">
-                <button
-                    onClick={onSwapClick}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-105 active:scale-95"
-                >
-                    SWAP {tokenA.symbol.toUpperCase()} FOR {tokenB.symbol.toUpperCase()}
-                </button>
+            {/* Action Buttons: Share (Left) & Swap (Right) */}
+            <div className="mb-6 z-20 flex flex-col md:flex-row items-center justify-center gap-4 w-full max-w-2xl">
+
                 <ShareButton
                     tokenA={tokenA.symbol.toUpperCase()}
                     tokenB={tokenB.symbol.toUpperCase()}
                     price={formatMoney(projectedPricePerToken)}
                     multiplier={multiplier.toFixed(2)}
-                    className="!w-auto !mt-0" // Override default full width / margin if any
+                    className="!w-full md:!w-auto flex-1 h-14 !px-6 !py-0 !rounded-full !bg-slate-800 !border-slate-700 hover:!bg-slate-700 hover:!border-slate-600 !text-base"
                 />
+
+                <button
+                    onClick={onSwapClick}
+                    className="flex-1 h-14 w-full md:w-auto flex items-center justify-center gap-2 px-6 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02] active:scale-95 text-base whitespace-nowrap"
+                >
+                    SWAP {tokenA.symbol.toUpperCase()} FOR {tokenB.symbol.toUpperCase()}
+                </button>
             </div>
 
             {/* Toggle */}

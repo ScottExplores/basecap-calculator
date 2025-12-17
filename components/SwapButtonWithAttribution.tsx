@@ -68,23 +68,11 @@ export function SwapButtonWithAttribution({ className }: { className?: string })
             const result = await sendCallsAsync({
                 calls: [tx.transaction],
                 capabilities: {
-                    paymasterService: {
-                        url: process.env.NEXT_PUBLIC_PAYMASTER_URL // If we want to support sponsorship?
-                        // OnchainKit handles this via `isSponsored` context? 
-                        // We didn't check `isSponsored`.
-                        // If we want sponsorship, we need to pass `paymasterService` capability.
-                        // But for now, let's focus on Builder Code.
-                    },
-                    // The "dataSuffix" capability
-                    // According to Base docs:
-                    // capabilities: { dataSuffix: ... } is NOT correct?
-                    // The docs said:
-                    /*
-                     capabilities: {
-                         dataSuffix: Attribution.toDataSuffix(...)
-                     }
-                    */
-                    // Yes.
+                    ...(process.env.NEXT_PUBLIC_PAYMASTER_URL && {
+                        paymasterService: {
+                            url: process.env.NEXT_PUBLIC_PAYMASTER_URL
+                        }
+                    }),
                     dataSuffix
                 }
             });

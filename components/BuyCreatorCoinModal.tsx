@@ -27,9 +27,9 @@ export function BuyCreatorCoinModal({ isOpen, onClose }: BuyCreatorCoinModalProp
     const creatorToken: Token = {
         name: 'Scott Explores',
         address: '0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e',
-        symbol: 'SCOTT', // Assumed, will display address if wrong or just symbol
+        symbol: 'Scott Explores', // Forcing full name display as per user request
         decimals: 18,
-        image: 'https://avatars.githubusercontent.com/u/168605286?v=4', // Using a placeholder or valid URL if known
+        image: 'https://avatars.githubusercontent.com/u/168605286?v=4',
         chainId: 8453,
     };
 

@@ -54,7 +54,7 @@ export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps
             address: addr as `0x${string}`,
             symbol: symbol,
             decimals: decimals,
-            image: typeof t.image === 'string' ? t.image : t.image?.large || t.image?.small || "",
+            image: t.image || "",
             chainId: 8453,
         };
     };
