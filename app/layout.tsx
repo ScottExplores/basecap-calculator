@@ -14,13 +14,13 @@ const sourceCodePro = Source_Code_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "Base Market Cap Calculator",
-  description: "Visualize token prices with the market cap of others.",
+  title: "CreatorCap",
+  description: "The official calculator for Creator Coins",
   openGraph: {
-    title: "Base Market Cap Calculator",
-    description: "Compare token valuations and potential growth on Base.",
+    title: "CreatorCap",
+    description: "The official calculator for Creator Coins",
     url: "https://basecap-calculator.vercel.app",
-    siteName: "Base Market Cap Calculator",
+    siteName: "CreatorCap",
     images: [
       {
         url: "https://basecap-calculator.vercel.app/og-image.png", // Assuming this will exist or be preview.png
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Base Market Cap Calculator",
-    description: "Visualize token prices with the market cap of others.",
+    title: "CreatorCap",
+    description: "The official calculator for Creator Coins",
     images: ["https://basecap-calculator.vercel.app/og-image.png"],
   },
   other: {
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
       version: "next",
       imageUrl: "https://basecap-calculator.vercel.app/preview.png",
       button: {
-        title: "MarketCap-Calculator",
+        title: "CreatorCap",
         action: {
           type: "launch_frame",
           url: "https://basecap-calculator.vercel.app",

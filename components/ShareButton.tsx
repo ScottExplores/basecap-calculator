@@ -10,13 +10,14 @@ interface ShareButtonProps {
     tokenB: string;
     price: string;
     multiplier: string;
+    className?: string;
 }
 
-export function ShareButton({ tokenA, tokenB, price, multiplier }: ShareButtonProps) {
+export function ShareButton({ tokenA, tokenB, price, multiplier, className }: ShareButtonProps) {
     const [copied, setCopied] = useState(false);
 
     const handleShare = async () => {
-        const text = `${tokenA} with the market cap of ${tokenB} is ${price} (${multiplier}x)! 🚀 Checked on Base Market Cap app.`;
+        const text = `${tokenA} with the market cap of ${tokenB} is ${price} (${multiplier}x)! 🚀 Checked on CreatorCap.`;
         const url = window.location.href; // Or a specific canonical URL if needed
 
         try {
@@ -48,7 +49,7 @@ export function ShareButton({ tokenA, tokenB, price, multiplier }: ShareButtonPr
         <button
             onClick={handleShare}
             className={clsx(
-                "flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all transform active:scale-95 shadow-lg border",
+                `bg-slate-900 border border-slate-700 text-white font-bold py-3 px-6 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 z-20 w-full sm:w-auto ${className || ''}`,
                 copied
                     ? "bg-green-500/20 text-green-400 border-green-500/50"
                     : "bg-blue-600 text-white border-blue-500 hover:bg-blue-500"

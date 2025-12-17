@@ -14,13 +14,14 @@ export function RootProvider({ children }: { children: ReactNode }) {
         chain={base}
         config={{
           appearance: {
-            mode: "auto", // OnchainKit will respect the class attribute
+            mode: "dark",
           },
           wallet: {
             display: "modal",
-            preference: "all",
+            preference: "all", // 'all' | 'smartWalletOnly' | 'eoaOnly'
           },
         }}
+        miniKit={{ enabled: true }}
       >
         {children}
       </OnchainKitProvider>

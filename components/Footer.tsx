@@ -16,7 +16,7 @@ export function Footer() {
             <footer className="w-full py-8 text-slate-500 dark:text-slate-500 text-sm flex flex-col md:flex-row items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800/50 mt-12 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm px-6 rounded-t-2xl z-0">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <span className="text-slate-600 dark:text-slate-400 font-semibold text-sm">
-                        © {new Date().getFullYear()} BaseCap Calculator
+                        © {new Date().getFullYear()} CreatorCap Calculator
                     </span>
                     <div className="flex gap-6 text-sm font-medium text-slate-500 dark:text-slate-500">
                         <a href="https://docs.base.org" target="_blank" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Base Docs</a>

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useSearchTokens, TokenData, useTokenContract } from '@/hooks/useTokenData';
-import { Search, X, ChevronDown, Wallet } from 'lucide-react';
+import { useSearchTokens, TokenData, useTokenContract, useTrendingTokens } from '@/hooks/useTokenData';
+import { Search, X, ChevronDown, Wallet, Flame, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTopTokens } from '@/hooks/useTopTokens';
 import { useAccount } from 'wagmi';
@@ -25,7 +25,7 @@ interface TokenInputProps {
     onSelect: (token: { id: string; symbol: string; name: string; image?: string } | null) => void;
 }
 
-type TabType = 'crypto' | 'contracts' | 'wallet'; // Removed stocks
+type TabType = 'crypto' | 'top100' | 'wallet'; // Removed contracts, added top100
 
 // Internal component to handle image fallback state preventing transparent bleed-through
 function TokenImage({ token }: { token: any }) {
@@ -64,7 +64,6 @@ function TokenImage({ token }: { token: any }) {
 export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputProps) {
     const [query, setQuery] = useState('');
     const [activeTab, setActiveTab] = useState<TabType>('crypto');
-    const [contractAddress, setContractAddress] = useState('');
     const [isOpen, setIsOpen] = useState(false);
 
     // Wallet Hooks
@@ -73,28 +72,28 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
 
     // Data Hooks
     const { data: searchResults } = useSearchTokens(query);
+    const { data: trendingTokens, isLoading: isLoadingTrending } = useTrendingTokens();
     const { data: topTokens } = useTopTokens();
 
-    // Contract Tab Logic: Check if input looks like a contract address
-    const isAddress = contractAddress.startsWith('0x') && contractAddress.length === 42;
-    const { data: contractToken } = useTokenContract(isAddress ? contractAddress : '', 'base');
+    // Contract Search Logic: Check if QUERY looks like a contract address OR ENS
+    const isAddress = (query.startsWith('0x') && query.length === 42) || query.toLowerCase().endsWith('.eth');
+    // We use the 'query' as the address/input if it matches pattern
+    const { data: contractToken } = useTokenContract(isAddress ? query : '', 'base');
 
     // Moxie Search for usernames (only if not an address and has length)
-    // We reuse the same input state 'contractAddress' for this dual purpose
-    const { data: moxieTokens } = useMoxieSearch(!isAddress ? contractAddress : '');
+    // We use 'query' context
+    const { data: moxieTokens } = useMoxieSearch((!isAddress && query.startsWith('@')) ? query : '');
 
     // Refs
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Auto-select wallet tab if connected
+    // Default to Crypto tab on open
     useEffect(() => {
-        if (isConnected && isOpen) {
-            setActiveTab('wallet');
-        } else if (!isConnected && activeTab === 'wallet') {
+        if (isOpen) {
             setActiveTab('crypto');
         }
-    }, [isConnected, isOpen]);
+    }, [isOpen]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -115,7 +114,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
         });
         setIsOpen(false);
         setQuery('');
-        setContractAddress('');
+        // setContractAddress(''); // Removed state
     };
 
     // Helper to resolve image
@@ -128,10 +127,12 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     // Filter top tokens if there is a query, but searchResults usually handles API search.
     const displayList = (query.length > 0 ? searchResults : topTokens) || [];
 
-    // Available tabs based on connection
-    const tabs: TabType[] = isConnected
-        ? ['wallet', 'crypto', 'contracts']
-        : ['crypto', 'contracts']; // Removed stocks
+    // Available tabs based on connection. Start with Search (crypto)
+    // Available tabs based on connection. Start with Search (crypto)
+    // User requested "search section as the new default view" and "replace contracts with top 100"
+
+    const orderedTabs: TabType[] = ['crypto', 'top100', 'wallet'];
+    const visibleTabs = isConnected ? orderedTabs : ['crypto', 'top100'];
 
     const displayImage = resolveImage(selectedToken?.image) || (selectedToken?.symbol && DEFAULT_LOGOS[selectedToken.symbol.toLowerCase()]);
 
@@ -211,7 +212,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                     >
                         {/* Tabs */}
                         <div className="flex items-center border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                            {tabs.map((tab) => (
+                            {visibleTabs.map((tab: TabType) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
@@ -229,27 +230,19 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                         </div>
 
                         {/* Search / Input Area */}
-                        {(activeTab === 'crypto' || activeTab === 'contracts') && (
+                        {/* Search / Input Area */}
+                        {/* Show input for Crypto (Search) and now Top 100 too (to filter?) or just Crypto? */}
+                        {/* Usually Top 100 is just a list, but maybe filterable. For now, only Crypto has search bar input by default behavior */}
+                        {(activeTab === 'crypto') && (
                             <div className="p-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                                {activeTab === 'contracts' ? (
-                                    <input
-                                        ref={inputRef}
-                                        type="text"
-                                        className="w-full bg-white dark:bg-slate-950 text-slate-900 dark:text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 border border-slate-200 dark:border-slate-800 placeholder-slate-400 dark:placeholder-slate-600 text-sm font-mono"
-                                        placeholder="Enter contract address (0x...) or Farcaster username"
-                                        value={contractAddress}
-                                        onChange={(e) => setContractAddress(e.target.value)}
-                                    />
-                                ) : (
-                                    <input
-                                        ref={inputRef}
-                                        type="text"
-                                        className="w-full bg-white dark:bg-slate-950 text-slate-900 dark:text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 border border-slate-200 dark:border-slate-800 placeholder-slate-400 dark:placeholder-slate-600 text-lg"
-                                        placeholder="Search tokens..."
-                                        value={query}
-                                        onChange={(e) => setQuery(e.target.value)}
-                                    />
-                                )}
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    className="w-full bg-white dark:bg-slate-950 text-slate-900 dark:text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 border border-slate-200 dark:border-slate-800 placeholder-slate-400 dark:placeholder-slate-600 text-lg font-sans"
+                                    placeholder="Search by name or paste address..."
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                />
                             </div>
                         )}
 
@@ -305,42 +298,41 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                 </div>
                             )}
 
-                            {activeTab === 'contracts' && (
+                            {activeTab === 'top100' && (
                                 <div className="flex flex-col">
-                                    {contractToken && (
-                                        <button
-                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 bg-blue-50 dark:bg-blue-900/10"
-                                            onClick={() => handleSelect(contractToken)}
-                                        >
-                                            <img src={resolveImage(contractToken.image)} className="w-10 h-10 rounded-full" />
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-base">{contractToken.symbol.toUpperCase()}</span>
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">{contractToken.name}</span>
-                                            </div>
-                                            <span className="ml-auto text-xs font-mono text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 px-2 py-1 rounded">Contract</span>
-                                        </button>
-                                    )}
+                                    {/* Header for Top 100 */}
+                                    <div className="px-5 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/30 flex justify-between">
+                                        <span>Token</span>
+                                        <span>Price / 24h</span>
+                                    </div>
 
-                                    {moxieTokens?.map((token) => (
+                                    {topTokens?.map((token: any) => (
                                         <button
                                             key={token.id}
-                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
-                                            onClick={() => handleSelect({ ...token, image: '' })} // Moxie tokens usually rely on default letter avatar if no image
+                                            className="w-full text-left px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50"
+                                            onClick={() => handleSelect(token)}
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                                                <span className="font-bold text-slate-500 dark:text-slate-400">{token.symbol[0]}</span>
+                                            <div className="flex items-center justify-center w-8 h-8 font-bold text-xs text-slate-400 mr-1">
+                                                {token.market_cap_rank}
+                                            </div>
+                                            <div className="relative">
+                                                <img src={resolveImage(token.image)} className="w-10 h-10 rounded-full object-cover bg-slate-100 dark:bg-slate-800" onError={(e: any) => e.currentTarget.style.display = 'none'} />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-base">{token.name}</span>
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">{token.symbol}</span>
+                                                <span className="font-bold text-base">{token.symbol.toUpperCase()}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[120px] truncate">{token.name}</span>
                                             </div>
-                                            <span className="ml-auto text-xs font-mono text-blue-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Fan Token</span>
+                                            <div className="ml-auto flex flex-col items-end">
+                                                <span className="font-mono font-bold text-sm">${token.current_price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</span>
+                                                {typeof token.price_change_percentage_24h === 'number' && (
+                                                    <span className={clsx("text-xs font-mono", token.price_change_percentage_24h >= 0 ? "text-green-500" : "text-red-500")}>
+                                                        {token.price_change_percentage_24h > 0 ? '+' : ''}{token.price_change_percentage_24h.toFixed(2)}%
+                                                    </span>
+                                                )}
+                                            </div>
                                         </button>
                                     ))}
-
-                                    {!contractToken && (!moxieTokens || moxieTokens.length === 0) && contractAddress.length > 2 && (
-                                        <div className="p-6 text-center text-slate-500">No results found</div>
-                                    )}
+                                    {topTokens?.length === 0 && <div className="p-8 text-center text-slate-500">Loading top tokens...</div>}
                                 </div>
                             )}
 
@@ -348,7 +340,49 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
 
                             {activeTab === 'crypto' && (
                                 <>
-                                    {displayList.map((token: any) => (
+                                    {/* Trending / Recent Section when no query */}
+                                    {query.length === 0 && (
+                                        <div className="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/30 flex items-center gap-2">
+                                            <Flame className="w-3 h-3 text-orange-500" />
+                                            <span>Featured & Trending on Base</span>
+                                        </div>
+                                    )}
+
+                                    {query.length === 0 && trendingTokens?.map((token: any) => (
+                                        <button
+                                            key={token.id}
+                                            className="w-full text-left px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50"
+                                            onClick={() => handleSelect(token)}
+                                        >
+                                            <div className="relative">
+                                                <img src={resolveImage(token.image)} className="w-10 h-10 rounded-full object-cover bg-slate-100 dark:bg-slate-800" onError={(e: any) => e.currentTarget.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=random`} />
+                                                <div className="absolute -bottom-1 -right-1 bg-slate-900 text-[10px] text-white px-1 rounded-full border border-slate-700">
+                                                    Base
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-base flex items-center gap-2">
+                                                    {token.symbol.toUpperCase()}
+                                                    {token.price_change_24h && (
+                                                        <span className={clsx("text-xs font-mono", token.price_change_24h >= 0 ? "text-green-500" : "text-red-500")}>
+                                                            {token.price_change_24h > 0 ? '+' : ''}{token.price_change_24h}%
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[150px] truncate">{token.name}</span>
+                                            </div>
+                                            <div className="ml-auto flex flex-col items-end">
+                                                <span className="font-mono font-bold text-sm">${token.current_price?.toFixed(token.current_price < 0.01 ? 6 : 2)}</span>
+                                                <span className="text-[10px] text-slate-500">MC: ${(token.market_cap / 1000000).toFixed(1)}M</span>
+                                            </div>
+                                        </button>
+                                    ))}
+
+                                    {/* Search Results or Top Tokens if no trending */}
+                                    {/* Only show displayList if query exists OR if we want to mix Top Tokens below trending? */}
+                                    {/* Let's show Top Tokens below trending if user scrolls, or just replace trending if query exists. */}
+
+                                    {query.length > 0 && displayList.map((token: any) => (
                                         <button
                                             key={token.id}
                                             className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
@@ -364,8 +398,24 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                             )}
                                         </button>
                                     ))}
-                                    {query.length > 0 && searchResults?.length === 0 && (
+
+                                    {query.length > 0 && searchResults?.length === 0 && !contractToken && (
                                         <div className="p-6 text-center text-slate-500">No tokens found</div>
+                                    )}
+
+                                    {/* Render Contract Token Result inside Search Tab if Query was proper address */}
+                                    {contractToken && isAddress && (
+                                        <button
+                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 bg-blue-50 dark:bg-blue-900/10"
+                                            onClick={() => handleSelect(contractToken)}
+                                        >
+                                            <img src={resolveImage(contractToken.image)} className="w-10 h-10 rounded-full" />
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-base">{contractToken.symbol.toUpperCase()}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">{contractToken.name}</span>
+                                            </div>
+                                            <span className="ml-auto text-xs font-mono text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 px-2 py-1 rounded">Contract</span>
+                                        </button>
                                     )}
                                 </>
                             )}

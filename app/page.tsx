@@ -21,8 +21,8 @@ import { ArrowRightLeft } from 'lucide-react';
 import { useWalletTokens } from '@/hooks/useWalletTokens';
 
 export default function Home() {
-  // Initialize with ETH and BTC IDs
-  const [tokenAId, setTokenAId] = useState<string | null>('ethereum');
+  // Initialize with $JESSE (Creator Coin) and BTC
+  const [tokenAId, setTokenAId] = useState<string | null>('0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59');
   const [tokenBId, setTokenBId] = useState<string | null>('bitcoin');
   const [amount, setAmount] = useState<number | string>(1);
 
@@ -74,7 +74,7 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 relative bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.6)] border border-blue-400/30">
           </div>
-          <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">BaseCap</span>
+          <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">CreatorCap</span>
         </div>
 
         <div className="flex items-center gap-4">
@@ -149,14 +149,7 @@ export default function Home() {
             onSwapClick={() => setIsSwapModalOpen(true)}
             userBalance={userBalance} // Passed balance
           />
-          {(tokenA && tokenB) && (
-            <ShareButton
-              tokenA={tokenA.symbol.toUpperCase()}
-              tokenB={tokenB.symbol.toUpperCase()}
-              price={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(tokenA.current_price * ((tokenB.market_cap / tokenA.market_cap)))}
-              multiplier={(tokenB.market_cap / tokenA.market_cap).toFixed(2)}
-            />
-          )}
+          {/* ShareButton moved inside MarketCapDisplay */}
         </div>
 
       </div>

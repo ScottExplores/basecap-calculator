@@ -5,6 +5,7 @@ import { TokenData } from '@/hooks/useTokenData';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
 import { AmountInput } from './AmountInput';
+import { ShareButton } from '@/components/ShareButton';
 
 interface MarketCapDisplayProps {
     tokenA: TokenData | null;
@@ -67,14 +68,21 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange, o
     return (
         <div className="w-full bg-slate-800/50 backdrop-blur-md rounded-3xl p-8 border border-slate-700 shadow-2xl flex flex-col items-center relative overflow-hidden">
 
-            {/* Swap Trigger */}
-            <div className="mb-6 z-20">
+            {/* Swap Trigger & Share */}
+            <div className="mb-6 z-20 flex items-center justify-center gap-4 flex-wrap">
                 <button
                     onClick={onSwapClick}
-                    className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-105"
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-105 active:scale-95"
                 >
                     SWAP {tokenA.symbol.toUpperCase()} FOR {tokenB.symbol.toUpperCase()}
                 </button>
+                <ShareButton
+                    tokenA={tokenA.symbol.toUpperCase()}
+                    tokenB={tokenB.symbol.toUpperCase()}
+                    price={formatMoney(projectedPricePerToken)}
+                    multiplier={multiplier.toFixed(2)}
+                    className="!w-auto !mt-0" // Override default full width / margin if any
+                />
             </div>
 
             {/* Toggle */}

@@ -11,6 +11,7 @@ import { Wallet, ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { useAccount } from 'wagmi';
 import { Token } from '@coinbase/onchainkit/token';
 import { X } from 'lucide-react';
+import { SwapButtonWithAttribution } from './SwapButtonWithAttribution';
 
 interface BuyCreatorCoinModalProps {
     isOpen: boolean;
@@ -65,7 +66,7 @@ export function BuyCreatorCoinModal({ isOpen, onClose }: BuyCreatorCoinModalProp
                             <SwapAmountInput label="Sell" token={ethToken} type="from" />
                             <SwapToggleButton />
                             <SwapAmountInput label="Buy" token={creatorToken} type="to" />
-                            <SwapButton />
+                            <SwapButtonWithAttribution />
                             <SwapMessage />
                             <SwapToast />
                         </Swap>

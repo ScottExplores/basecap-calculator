@@ -19,12 +19,16 @@ export function useTopTokens() {
                     },
                 });
                 const stablecoins = ['usdc', 'usdt', 'dai', 'tusd', 'fdusd'];
-                return (response.data as TokenData[]).filter(t => !stablecoins.includes(t.symbol.toLowerCase()));
+                return (response.data as any[]).filter(t => !stablecoins.includes(t.symbol.toLowerCase())).map(t => ({
+                    ...t,
+                    price_change_percentage_24h: t.price_change_percentage_24h
+                } as TokenData));
             } catch (error) {
                 console.error("Error fetching top tokens:", error);
                 return [];
             }
         },
-        staleTime: 300000, // 5 minutes cache
+        staleTime: 300000,
+        placeholderData: (prev) => prev,
     });
 }
