@@ -1,17 +1,8 @@
-'use client';
-import {
-    Swap,
-    SwapAmountInput,
-    SwapToggleButton,
-    SwapButton,
-    SwapMessage,
-    SwapToast
-} from '@coinbase/onchainkit/swap';
+import { Buy } from '@coinbase/onchainkit/buy';
 import { Wallet, ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { useAccount } from 'wagmi';
 import { Token } from '@coinbase/onchainkit/token';
 import { X } from 'lucide-react';
-import { SwapButtonWithAttribution } from './SwapButtonWithAttribution';
 
 interface BuyCreatorCoinModalProps {
     isOpen: boolean;
@@ -57,19 +48,16 @@ export function BuyCreatorCoinModal({ isOpen, onClose }: BuyCreatorCoinModalProp
 
                 <div className="mb-6 text-center">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">Support Scott Explores</h2>
-                    <p className="text-sm text-slate-500 mt-1">Swap ETH for Creator Coin on Base</p>
+                    <p className="text-sm text-slate-500 mt-1">Buy Creator Coin</p>
                 </div>
 
                 <div className="animate-in slide-in-from-bottom-5 duration-300">
                     {address ? (
-                        <Swap>
-                            <SwapAmountInput label="Sell" token={ethToken} type="from" />
-                            <SwapToggleButton />
-                            <SwapAmountInput label="Buy" token={creatorToken} type="to" />
-                            <SwapButtonWithAttribution />
-                            <SwapMessage />
-                            <SwapToast />
-                        </Swap>
+                        <Buy
+                            toToken={creatorToken}
+                            fromToken={ethToken}
+                            experimental={{ useAggregator: true }}
+                        />
                     ) : (
                         <div className="flex flex-col items-center gap-4 py-8">
                             <p className="text-slate-500">Please connect your wallet to buy.</p>

@@ -1,12 +1,4 @@
-'use client';
-import {
-    Swap,
-    SwapAmountInput,
-    SwapToggleButton,
-    SwapMessage,
-    SwapToast,
-    SwapButton
-} from '@coinbase/onchainkit/swap';
+import { Buy } from '@coinbase/onchainkit/buy';
 import { Wallet, ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { useAccount } from 'wagmi';
 import type { Token } from '@coinbase/onchainkit/token';
@@ -27,7 +19,17 @@ export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps
 
     // Helper to map TokenData to OnchainKit Token
     const mapToken = (t: TokenData | null): Token | undefined => {
-        if (!t) return undefined;
+        // Default to ETH if null (useful for "Sell" token defaults)
+        if (!t) {
+            return {
+                name: 'Ether',
+                address: '',
+                symbol: 'ETH',
+                decimals: 18,
+                image: 'https://wallet-api-production.s3.amazonaws.com/uploads/tokens/eth_288.png',
+                chainId: 8453,
+            };
+        }
 
         let addr = t.address;
         let decimals = t.decimals || 18;
@@ -59,8 +61,19 @@ export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps
         };
     };
 
-    const fromToken = mapToken(tokenIn);
     const toToken = mapToken(tokenOut);
+    // Note: Buy component handles 'fromToken' (ETH) internally usually, 
+    // or we can pass it if we want specific source. 
+    // For now we just focus on the target token.
+
+    const ethToken: Token = {
+        name: 'Ether',
+        address: '',
+        symbol: 'ETH',
+        decimals: 18,
+        image: 'https://wallet-api-production.s3.amazonaws.com/uploads/tokens/eth_288.png',
+        chainId: 8453,
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -75,23 +88,26 @@ export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps
                 </button>
 
                 <div className="mb-6">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Swap Tokens</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Buy {toToken?.symbol || 'Token'}</h2>
                 </div>
 
-                {/* Swap Interface */}
+                {/* Buy Interface */}
                 <div className="animate-in slide-in-from-bottom-5 duration-300">
                     {address ? (
-                        <Swap>
-                            <SwapAmountInput label="Sell" token={fromToken} type="from" />
-                            <SwapToggleButton />
-                            <SwapAmountInput label="Buy" token={toToken} type="to" />
-                            <SwapButton />
-                            <SwapMessage />
-                            <SwapToast />
-                        </Swap>
+                        toToken ? (
+                            <Buy
+                                toToken={toToken}
+                                fromToken={ethToken}
+                                experimental={{ useAggregator: true }}
+                            />
+                        ) : (
+                            <div className="text-center p-4 text-slate-500">
+                                Invalid Token Data
+                            </div>
+                        )
                     ) : (
                         <div className="flex flex-col items-center gap-4 py-8">
-                            <p className="text-slate-500">Please connect your wallet to swap.</p>
+                            <p className="text-slate-500">Please connect your wallet to buy.</p>
                             <Wallet>
                                 <ConnectWallet className="bg-blue-600" />
                             </Wallet>

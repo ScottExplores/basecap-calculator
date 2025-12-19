@@ -79,12 +79,20 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange, o
                     className="!w-full md:!w-auto flex-1 h-14 !px-6 !py-0 !rounded-full !bg-slate-800 !border-slate-700 hover:!bg-slate-700 hover:!border-slate-600 !text-base"
                 />
 
-                <button
-                    onClick={onSwapClick}
-                    className="flex-1 h-14 w-full md:w-auto flex items-center justify-center gap-2 px-6 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02] active:scale-95 text-base whitespace-nowrap"
-                >
-                    SWAP {tokenA.symbol.toUpperCase()} FOR {tokenB.symbol.toUpperCase()}
-                </button>
+                {/* Valid on Base Check used for Buy Button Visibility */}
+                {/* We count 'ETH' (Native), 'BTC' (cbBTC), or any token with a valid address as swappable on Base */}
+                {(tokenA.symbol.toUpperCase() === 'ETH' || tokenA.symbol.toUpperCase() === 'BTC' || (tokenA.address && tokenA.address.startsWith('0x'))) ? (
+                    <button
+                        onClick={onSwapClick}
+                        className="flex-1 h-14 w-full md:w-auto flex items-center justify-center gap-2 px-6 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02] active:scale-95 text-base whitespace-nowrap"
+                    >
+                        BUY {tokenA.symbol.toUpperCase()}
+                    </button>
+                ) : (
+                    <div className="hidden md:flex flex-1 h-14 w-full md:w-auto items-center justify-center gap-2 px-6 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full font-bold cursor-not-allowed text-base whitespace-nowrap border border-slate-200 dark:border-slate-700">
+                        Buy Unavailable
+                    </div>
+                )}
             </div>
 
             {/* Toggle */}

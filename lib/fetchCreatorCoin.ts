@@ -1,4 +1,5 @@
 import { createPublicClient, http, parseAbiItem, formatUnits } from 'viem';
+import { getAddress } from '@coinbase/onchainkit/identity';
 import { base, mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
 import { request, gql } from 'graphql-request';
@@ -42,12 +43,37 @@ const mainnetClient = createPublicClient({
 const ZORA_API = 'https://api.zora.co/graphql';
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
+// Manual Aliases for Creator Coins where Basename points to Wallet, not Token
+const CREATOR_ALIASES: Record<string, string> = {
+    'scottexplores.base.eth': '0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e'
+};
+
 export async function fetchCreatorCoin(input: string): Promise<CreatorCoinResponse | { error: string }> {
     try {
         let address = input;
 
-        // 1. Resolve ENS (Mainnet)
-        if (input.toLowerCase().endsWith('.eth')) {
+        // 0. Check Aliases (Fast Path)
+        if (CREATOR_ALIASES[input.toLowerCase()]) {
+            address = CREATOR_ALIASES[input.toLowerCase()];
+        }
+        // 1. Resolve Basename (Base Chain)
+        else if (input.toLowerCase().endsWith('.base.eth')) {
+            try {
+                const resolved = await getAddress({ name: input, chain: base });
+                if (resolved) {
+                    address = resolved;
+                } else {
+                    return { error: 'Basename not resolved' };
+                }
+            } catch (e) {
+                console.warn('Basename resolution failed', e);
+                // Continue to try other methods or return error?
+                // If it ends in .base.eth and failed, it's likely invalid.
+                return { error: 'Basename resolution failed' };
+            }
+        }
+        // 2. Resolve ENS (Mainnet) - Fallback for other .eth
+        else if (input.toLowerCase().endsWith('.eth')) {
             try {
                 const resolved = await mainnetClient.getEnsAddress({ name: normalize(input) });
                 if (resolved) {

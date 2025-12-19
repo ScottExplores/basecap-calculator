@@ -6,9 +6,10 @@ import {
   ConnectWallet,
   WalletDropdown,
   WalletDropdownDisconnect,
-  WalletDropdownBasename
+  WalletDropdownBasename,
+  WalletDropdownLink,
 } from "@coinbase/onchainkit/wallet";
-import { Avatar, Name, Identity, Address } from "@coinbase/onchainkit/identity";
+import { Avatar, Name, Identity, Address, EthBalance } from "@coinbase/onchainkit/identity";
 import { TokenInput } from '@/components/TokenInput';
 import { MarketCapDisplay } from '@/components/MarketCapDisplay';
 import { ShareButton } from '@/components/ShareButton';
@@ -62,8 +63,8 @@ export default function Home() {
       <SwapModal
         isOpen={isSwapModalOpen}
         onClose={() => setIsSwapModalOpen(false)}
-        tokenIn={tokenA || null}
-        tokenOut={tokenB || null}
+        tokenIn={null}
+        tokenOut={tokenA || null}
       />
 
       {/* Background Ambience */}
@@ -89,8 +90,12 @@ export default function Home() {
                 <Avatar />
                 <Name />
                 <Address />
+                <EthBalance />
               </Identity>
               <WalletDropdownBasename />
+              <WalletDropdownLink icon="wallet" href="https://keys.coinbase.com">
+                Wallet
+              </WalletDropdownLink>
               <WalletDropdownDisconnect />
             </WalletDropdown>
           </Wallet>
