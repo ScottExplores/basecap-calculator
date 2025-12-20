@@ -135,14 +135,25 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange, o
                 {tokenA.symbol.toUpperCase()} WITH THE MARKET CAP OF {tokenB.symbol.toUpperCase()}
             </h3>
 
-            {/* Equation */}
-            <div className="text-center mb-8">
-                <span className="text-xl md:text-2xl font-bold tracking-wider uppercase text-slate-300">
-                    <span className="text-blue-400">{tokenA.symbol.toUpperCase()}</span> IS <span className={isUnder ? "text-red-400" : "text-green-400"}>{displayMultiplier}X</span> {isUnder ? "UNDER" : "ABOVE"} <span className="text-violet-400">{tokenB.symbol.toUpperCase()}</span>
-                </span>
+            {/* Projected Value (Moved) */}
+            <div className="flex flex-col items-center text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                <div className="text-sm font-bold text-blue-700 dark:text-blue-400 mb-1 tracking-wider uppercase">Projected Value</div>
+                <div className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-violet-700 dark:from-white dark:to-slate-200 tracking-tighter filter drop-shadow-sm mb-2">
+                    {formatMoney(totalValue)}
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className={clsx("px-3 py-1 rounded-full text-sm font-bold border",
+                        multiplier > 1 ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20" : "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+                    )}>
+                        {multiplier.toFixed(2)}x
+                    </div>
+                    <span className="text-slate-600 dark:text-slate-400 text-sm font-medium">potential upside</span>
+                </div>
             </div>
 
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+
+
+            <div className="flex flex-col items-center justify-center gap-8 relative z-10 w-full">
 
                 {/* Token A Input Amount */}
                 <div className="flex flex-col gap-2 w-full md:w-auto min-w-[200px]">
@@ -159,21 +170,7 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange, o
 
 
 
-                {/* Result Price */}
-                <div className="flex flex-col items-center md:items-end text-center md:text-right">
-                    <div className="text-sm font-bold text-blue-700 dark:text-blue-400 mb-1 tracking-wider uppercase">Projected Value</div>
-                    <div className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-violet-700 dark:from-white dark:to-slate-200 tracking-tighter filter drop-shadow-sm">
-                        {formatMoney(totalValue)}
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                        <div className={clsx("px-3 py-1 rounded-full text-sm font-bold border",
-                            multiplier > 1 ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20" : "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
-                        )}>
-                            {multiplier.toFixed(2)}x
-                        </div>
-                        <span className="text-slate-600 dark:text-slate-400 text-sm font-medium">potential upside</span>
-                    </div>
-                </div>
+
             </div>
 
             {/* Visual Bar Graph */}

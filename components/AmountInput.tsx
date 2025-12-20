@@ -14,7 +14,9 @@ export function AmountInput({ amount, onChange, symbol, userBalance }: AmountInp
     return (
         <div className="w-full">
             <div className="relative group">
-                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest absolute -top-2.5 left-3 bg-white dark:bg-slate-900 px-2 rounded z-10 transition-colors">Amount</label>
+                <label className="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider absolute -top-3 left-4 bg-white dark:bg-slate-900 px-2 rounded z-10 transition-colors flex items-center gap-2 shadow-sm border border-slate-100 dark:border-slate-800 rotate-1">
+                    👇 How much do you own? 👀
+                </label>
                 <div className="flex items-center bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500 transition-all shadow-sm">
                     <input
                         type="number"
