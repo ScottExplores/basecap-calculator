@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { fetchCreatorCoin } from '../lib/fetchCreatorCoin';
+import { fetchCoinMetadata } from '../utils/zora';
 
 export interface TokenData {
     id: string;
@@ -29,37 +30,54 @@ export function useTokenData(tokenId: string) {
             if (!tokenId) return null;
 
             try {
-                // Check for Contract Address (0x) OR ENS (.eth)
-                // We treat both as potential Creator Coin lookups first
+                // If it's a contract address, try Zora first (high quality for Base)
+                if (tokenId.startsWith('0x') && tokenId.length === 42) {
+                    try {
+                        const zoraData = await fetchCoinMetadata(tokenId);
+                        if (zoraData) {
+                            return {
+                                id: tokenId,
+                                symbol: zoraData.symbol,
+                                name: zoraData.name,
+                                image: typeof zoraData.mediaContent?.previewImage === 'string'
+                                    ? zoraData.mediaContent.previewImage
+                                    : ((zoraData.mediaContent?.previewImage as any)?.url || (zoraData.mediaContent?.previewImage as any)?.medium || (zoraData.mediaContent?.previewImage as any)?.large || ''),
+                                current_price: parseFloat(zoraData.tokenPrice?.priceInUsdc || '0'),
+                                market_cap: parseFloat(zoraData.marketCap || '0'),
+                                ath: 0,
+                                market_cap_rank: 0,
+                                price_change_percentage_24h: 0,
+                                address: tokenId,
+                                decimals: 18 // Default for Zora20
+                            } as TokenData;
+                        }
+                    } catch (e) {
+                        console.warn("Zora lookup failed for tokenId", tokenId, e);
+                    }
+                }
+
+                // Check for ENS OR Creator Coin logic
                 if (tokenId.startsWith('0x') || tokenId.toLowerCase().endsWith('.eth')) {
                     const creatorData = await fetchCreatorCoin(tokenId);
 
                     if ('token' in creatorData) {
-                        const { token, comparison } = creatorData;
-                        // Return explicitly mapped TokenData
+                        const { token } = creatorData;
                         return {
                             id: token.address,
                             symbol: token.symbol,
                             name: token.name,
-                            image: token.image || `https://dd.dexscreener.com/ds-data/tokens/base/${token.address}.png`, // Fallback
-                            current_price: (token.marketCap / parseFloat(token.supply.replace(/,/g, ''))) || 0, // Derive price from mcap/supply if needed, or we should have passed it. 
-                            // Wait, fetchCreatorCoin calculates MarketCap from Price * Supply. 
-                            // So Price = MarketCap / Supply.
-                            // Actually, let's trust the logic inside fetchCreatorCoin or just re-calculate.
-                            // Better: Modify fetchCreatorCoin to return price or just infer it here. 
-                            // Simple calc:
+                            image: token.image || `https://dd.dexscreener.com/ds-data/tokens/base/${token.address}.png`,
+                            current_price: (token.marketCap / parseFloat(token.supply.replace(/,/g, ''))) || 0,
                             market_cap: token.marketCap,
                             ath: 0,
                             market_cap_rank: 0,
                             address: token.address,
                             decimals: token.decimals,
-                            price_change_percentage_24h: 0, // We didn't fetch this in the utility specifically, maybe add it?
-                            // For now, 0 is fine for "Discovery"
+                            price_change_percentage_24h: 0,
                             creator_name: token.creator.name,
                             creator_avatar: token.creator.avatar
                         } as TokenData;
                     }
-                    // If fetchCreatorCoin returned error, fall through to standard logic (e.g. might be a standard coin on CG)
                 }
 
                 // If ID looks like a contract address but Creator Fetch failed, fetch by contract via CG (standard fallback)
@@ -163,11 +181,12 @@ export function useSearchTokens(query: string) {
         queryKey: ['search', query],
         queryFn: async () => {
             if (!query || query.length < 2) return [];
-            const response = await axios.get(`${COINGECKO_API}/search`, {
-                params: { query }
+            const response = await axios.get('/api/tokens', {
+                params: {
+                    type: 'search',
+                    query
+                }
             });
-            // CoinGecko search returns a 'coins' array with partial data. 
-            // We might need to fetch full market data if selected, but this is enough for the dropdown.
             return response.data.coins.slice(0, 5);
         },
         enabled: query.length >= 2,
@@ -181,8 +200,30 @@ export function useTokenContract(contractAddress: string, platformId: string = '
         queryFn: async () => {
             if (!contractAddress || contractAddress.length < 10) return null;
 
-            // Priority 1: Fetch using Creator Coin Utility (handles Zora/ENS logic if applicable, but mostly checking internal metadata)
-            // Even though we have contractAddress, fetchCreatorCoin is robust.
+            // Priority 1: Fetch using Zora SDK
+            try {
+                const zoraData = await fetchCoinMetadata(contractAddress);
+                if (zoraData) {
+                    return {
+                        id: contractAddress,
+                        symbol: zoraData.symbol,
+                        name: zoraData.name,
+                        image: typeof zoraData.mediaContent?.previewImage === 'string'
+                            ? zoraData.mediaContent.previewImage
+                            : ((zoraData.mediaContent?.previewImage as any)?.url || (zoraData.mediaContent?.previewImage as any)?.medium || (zoraData.mediaContent?.previewImage as any)?.large || ''),
+                        current_price: parseFloat(zoraData.tokenPrice?.priceInUsdc || '0'),
+                        market_cap: parseFloat(zoraData.marketCap || '0'),
+                        ath: 0,
+                        market_cap_rank: 0,
+                        price_change_percentage_24h: 0,
+                        address: contractAddress,
+                        decimals: 18
+                    } as TokenData;
+                }
+            } catch (e) { }
+
+
+            // Priority 2: Fetch using Creator Coin Utility
             try {
                 const creatorData = await fetchCreatorCoin(contractAddress);
                 if ('token' in creatorData) {
@@ -329,15 +370,12 @@ export function useTrendingTokens() {
                 } catch (e) { console.warn("DexScreener fetch failed for pinned", e); }
 
 
-                // 3. Fetch Top Base Tokens for backfill (CoinGecko)
-                const cgResponse = await axios.get(`${COINGECKO_API}/coins/markets`, {
+                // 3. Fetch Top Base Tokens for backfill (Local Proxy)
+                const cgResponse = await axios.get('/api/tokens', {
                     params: {
-                        vs_currency: 'usd',
+                        type: 'markets',
                         category: 'base-ecosystem',
-                        order: 'market_cap_desc',
-                        per_page: 100,
-                        page: 1,
-                        sparkline: false
+                        per_page: 50,
                     }
                 }).catch(e => ({ data: [] })); // Fail gracefully
 

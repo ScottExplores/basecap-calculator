@@ -10,6 +10,7 @@ import "@coinbase/onchainkit/styles.css";
 
 
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { MiniKitProvider } from "@/providers/MiniKitProvider";
 
 export function RootProvider({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient();
@@ -22,19 +23,21 @@ export function RootProvider({ children }: { children: ReactNode }) {
             apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
             projectId={process.env.NEXT_PUBLIC_CDP_PROJECT_ID}
             chain={base}
+            // @ts-ignore - Enable MiniKit features
+            miniKit={{ enabled: true }}
             config={{
               appearance: {
                 mode: "dark",
               },
               wallet: {
                 display: "modal",
-                // 'all' | 'smartWalletOnly' | 'eoaOnly'
-                // Base Account usually implies smart wallet or all
                 preference: "all",
               },
             }}
           >
-            {children}
+            <MiniKitProvider>
+              {children}
+            </MiniKitProvider>
           </OnchainKitProvider>
         </QueryClientProvider>
       </WagmiProvider>

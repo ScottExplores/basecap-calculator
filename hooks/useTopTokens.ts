@@ -9,13 +9,10 @@ export function useTopTokens() {
         queryKey: ['topTokens'],
         queryFn: async () => {
             try {
-                const response = await axios.get(`${COINGECKO_API}/coins/markets`, {
+                const response = await axios.get('/api/tokens', {
                     params: {
-                        vs_currency: 'usd',
-                        order: 'market_cap_desc',
+                        type: 'markets',
                         per_page: 100,
-                        page: 1,
-                        sparkline: false,
                     },
                 });
                 const stablecoins = ['usdc', 'usdt', 'dai', 'tusd', 'fdusd'];

@@ -58,8 +58,21 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange, o
 
     const formatMoney = (p: number) => {
         if (p === 0) return '$0.00';
-        if (p < 0.01) return '$' + p.toLocaleString(undefined, { maximumSignificantDigits: 6 });
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(p);
+        const absP = Math.abs(p);
+        if (absP < 1) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: absP < 0.0001 ? 10 : 6
+            }).format(p);
+        }
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(p);
     };
     const formatMcap = (m: number) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: "compact" }).format(m);
@@ -140,7 +153,7 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange, o
                         userBalance={userBalance}
                     />
                     <div className="text-sm text-slate-500 dark:text-slate-500 pl-2">
-                        Current Value: <span className="font-mono text-slate-900 dark:text-slate-300 font-bold">${(projectedPricePerToken * amount / multiplier).toLocaleString()}</span>
+                        Current Value: <span className="font-mono text-slate-900 dark:text-slate-300 font-bold">{formatMoney(projectedPricePerToken * amount / multiplier)}</span>
                     </div>
                 </div>
 

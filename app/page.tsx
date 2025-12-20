@@ -1,27 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Wallet,
-  ConnectWallet,
-  WalletDropdown,
-  WalletDropdownDisconnect,
-  WalletDropdownBasename,
-  WalletDropdownLink,
-} from "@coinbase/onchainkit/wallet";
-import { Avatar, Name, Identity, Address, EthBalance } from "@coinbase/onchainkit/identity";
+import { useAccount } from 'wagmi';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { sdk } from "@farcaster/miniapp-sdk";
 import { TokenInput } from '@/components/TokenInput';
 import { MarketCapDisplay } from '@/components/MarketCapDisplay';
 import { ShareButton } from '@/components/ShareButton';
 import { useTokenData } from '@/hooks/useTokenData';
-import sdk from '@farcaster/miniapp-sdk';
 import { Footer } from '@/components/Footer';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SwapModal } from '@/components/SwapModal';
-import { ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft, UserCircle } from 'lucide-react';
 import { useWalletTokens } from '@/hooks/useWalletTokens';
 
 export default function Home() {
+  const { address, isConnected } = useAccount();
+  const [farcasterUser, setFarcasterUser] = useState<any>(null);
+
   // Initialize with $JESSE (Creator Coin) and BTC
   const [tokenAId, setTokenAId] = useState<string | null>('0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59');
   const [tokenBId, setTokenBId] = useState<string | null>('bitcoin');
@@ -30,12 +26,21 @@ export default function Home() {
   const { data: tokenA } = useTokenData(tokenAId || '');
   const { data: tokenB } = useTokenData(tokenBId || '');
 
+  const { setFrameReady } = useMiniKit();
+
+  // Signal frame readiness
   useEffect(() => {
     const init = async () => {
       try {
         await sdk.actions.ready();
+        setFrameReady?.();
+
+        const context = await sdk.context;
+        if (context?.user) {
+          setFarcasterUser(context.user);
+        }
       } catch (e) {
-        console.log("Not in Farcaster environment or SDK error:", e);
+        console.log("Mini App initialization error:", e);
       }
     };
     init();
@@ -80,25 +85,27 @@ export default function Home() {
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <Wallet>
-            <ConnectWallet className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 transition-all shadow-lg shadow-blue-500/20 border-0 rounded-full font-bold text-white px-4 py-2">
-              <Avatar className="h-6 w-6" />
-              <Name />
-            </ConnectWallet>
-            <WalletDropdown>
-              <Identity className="px-4 py-2 pt-3 pb-2" hasCopyAddressOnClick>
-                <Avatar />
-                <Name />
-                <Address />
-                <EthBalance />
-              </Identity>
-              <WalletDropdownBasename />
-              <WalletDropdownLink icon="wallet" href="https://keys.coinbase.com">
-                Wallet
-              </WalletDropdownLink>
-              <WalletDropdownDisconnect />
-            </WalletDropdown>
-          </Wallet>
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pr-4 pl-1 py-1 shadow-sm">
+            {farcasterUser?.pfpUrl ? (
+              <img
+                src={farcasterUser.pfpUrl}
+                alt="Profile"
+                className="w-8 h-8 rounded-full border border-blue-500/30"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                <UserCircle className="w-5 h-5" />
+              </div>
+            )}
+            <div className="flex flex-col">
+              <span className="text-xs font-bold leading-none mb-0.5">
+                {farcasterUser?.displayName || farcasterUser?.username || 'User'}
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono leading-none">
+                {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connecting...'}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

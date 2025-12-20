@@ -8,6 +8,7 @@ import { useTopTokens } from '@/hooks/useTopTokens';
 import { useAccount } from 'wagmi';
 import { useWalletTokens } from '@/hooks/useWalletTokens';
 import { useMoxieSearch } from '@/hooks/useMoxieSearch';
+import { handleCoinSearch } from '@/utils/searchHandler';
 import clsx from 'clsx';
 
 // User requested specific defaults
@@ -22,41 +23,56 @@ const DEFAULT_LOGOS: Record<string, string> = {
 interface TokenInputProps {
     placeholder?: string;
     selectedToken: TokenData | null | undefined;
-    onSelect: (token: { id: string; symbol: string; name: string; image?: string } | null) => void;
+    onSelect: (token: { id: string; symbol: string; name: string; image?: string; current_price?: number } | null) => void;
 }
 
 type TabType = 'crypto' | 'top100' | 'wallet'; // Removed contracts, added top100
 
-// Internal component to handle image fallback state preventing transparent bleed-through
-function TokenImage({ token }: { token: any }) {
+// Helper to resolve image from various metadata structures (CG, DexScreener, Zora)
+const resolveImage = (img: any): string => {
+    if (!img) return '';
+    if (typeof img === 'string') return img;
+
+    // Zora / common preview formats
+    if (img.previewImage) {
+        if (typeof img.previewImage === 'string') return img.previewImage;
+        return img.previewImage.url || img.previewImage.medium || img.previewImage.large || img.previewImage.thumbnail || img.previewImage.small || '';
+    }
+
+    // Direct object with size keys
+    if (img.url || img.medium || img.large || img.thumbnail || img.small) {
+        return img.url || img.medium || img.large || img.thumbnail || img.small || '';
+    }
+
+    // CoinGecko / DexScreener formats
+    if (img.large || img.thumb || img.small) return img.large || img.thumb || img.small;
+
+    return '';
+};
+
+// Internal component to handle image fallback state
+function TokenImage({ token, className = "w-10 h-10" }: { token: any; className?: string }) {
     const [error, setError] = useState(false);
+    const symbol = token.symbol || '?';
 
-    // Resolve helper (duplicated to avoid scoped complexity or move out)
-    const resolve = (img: any) => {
-        if (!img) return '';
-        if (typeof img === 'string') return img;
-        return img.large || img.thumb || img.small || '';
-    };
-
-    const defaultLogo = DEFAULT_LOGOS[token.symbol?.toLowerCase()];
-    // Prioritize Default -> Token Image
-    // Use token.image from wallet (which might include proper DexScreener url now)
-    const src = defaultLogo || resolve(token.image);
+    const defaultLogo = DEFAULT_LOGOS[symbol.toLowerCase()];
+    // Prioritize Default -> Token Image Source
+    const src = defaultLogo || resolveImage(token.image || token.logoURI || token.mediaContent);
 
     if (!error && src) {
         return (
             <img
                 src={src}
-                alt={token.symbol}
-                className="w-10 h-10 rounded-full object-cover bg-white dark:bg-slate-800"
+                alt={symbol}
+                className={clsx(className, "rounded-full object-cover bg-white dark:bg-slate-800")}
                 onError={() => setError(true)}
             />
         );
     }
 
     return (
-        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 flex-shrink-0">
-            <span className="font-bold text-slate-500 dark:text-slate-400">{token.symbol?.[0]}</span>
+        <div className={clsx(className, "rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 flex-shrink-0")}>
+            <span className="font-bold text-slate-500 dark:text-slate-400 uppercase">{symbol[0]}</span>
         </div>
     );
 }
@@ -84,6 +100,32 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     // We use 'query' context
     const { data: moxieTokens } = useMoxieSearch((!isAddress && query.startsWith('@')) ? query : '');
 
+    // Zora Search State
+    const [zoraResult, setZoraResult] = useState<any>(null);
+    const [isSearchingZora, setIsSearchingZora] = useState(false);
+
+    useEffect(() => {
+        const performZoraSearch = async () => {
+            if (isAddress) {
+                setIsSearchingZora(true);
+                try {
+                    const result = await handleCoinSearch(query);
+                    setZoraResult(result);
+                } catch (error) {
+                    console.error("Zora search error:", error);
+                    setZoraResult(null);
+                } finally {
+                    setIsSearchingZora(false);
+                }
+            } else {
+                setZoraResult(null);
+            }
+        };
+
+        const timer = setTimeout(performZoraSearch, 300);
+        return () => clearTimeout(timer);
+    }, [query, isAddress]);
+
     // Refs
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -110,19 +152,15 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
             id: token.id,
             symbol: token.symbol,
             name: token.name,
-            image: resolveImage(token.image || token.logoURI),
+            image: resolveImage(token.image || token.logoURI || token.mediaContent),
+            current_price: token.current_price || 0
         });
         setIsOpen(false);
         setQuery('');
         // setContractAddress(''); // Removed state
     };
 
-    // Helper to resolve image
-    const resolveImage = (img: any): string => {
-        if (!img) return '';
-        if (typeof img === 'string') return img;
-        return img.large || img.thumb || img.small || '';
-    };
+    // Helper is now top-level
 
     // Filter top tokens if there is a query, but searchResults usually handles API search.
     const displayList = (query.length > 0 ? searchResults : topTokens) || [];
@@ -134,7 +172,6 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     const orderedTabs: TabType[] = ['crypto', 'top100', 'wallet'];
     const visibleTabs: TabType[] = isConnected ? orderedTabs : ['crypto', 'top100'];
 
-    const displayImage = resolveImage(selectedToken?.image) || (selectedToken?.symbol && DEFAULT_LOGOS[selectedToken.symbol.toLowerCase()]);
 
     return (
         <div className="w-full relative group" ref={dropdownRef}>
@@ -151,13 +188,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
             >
                 {selectedToken ? (
                     <div className="flex items-center gap-3 w-full overflow-hidden">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 p-1.5 flex-shrink-0 border border-slate-200 dark:border-slate-600 shadow-inner flex items-center justify-center">
-                            {displayImage ? (
-                                <img src={displayImage as string} alt={selectedToken.symbol} className="w-full h-full object-contain rounded-full" />
-                            ) : (
-                                <span className="text-xl font-bold dark:text-white">{selectedToken.symbol[0]}</span>
-                            )}
-                        </div>
+                        <TokenImage token={selectedToken} />
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-baseline gap-2">
                                 <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white truncate">{selectedToken.symbol.toUpperCase()}</span>
@@ -167,9 +198,12 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                         <div className="ml-auto flex flex-col items-end flex-shrink-0">
                             {selectedToken.current_price > 0 && (
                                 <span className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">
-                                    ${selectedToken.current_price < 0.01
-                                        ? selectedToken.current_price.toLocaleString(undefined, { maximumSignificantDigits: 6 })
-                                        : selectedToken.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD',
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: selectedToken.current_price < 0.0001 ? 10 : 6
+                                    }).format(selectedToken.current_price)}
                                 </span>
                             )}
                         </div>
@@ -261,8 +295,8 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                             >
                                                 <TokenImage token={token} />
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-base">{token.symbol.toUpperCase()}</span>
-                                                    <span className="text-xs text-slate-500 dark:text-slate-400">{token.name}</span>
+                                                    <span className="font-bold text-base">{(token.symbol || '?').toUpperCase()}</span>
+                                                    <span className="text-xs text-slate-500 dark:text-slate-400">{token.name || 'Unknown'}</span>
                                                 </div>
                                                 <div className="ml-auto flex flex-col items-end">
                                                     <span className="text-sm font-bold text-slate-900 dark:text-white">
@@ -316,7 +350,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                                 {token.market_cap_rank}
                                             </div>
                                             <div className="relative">
-                                                <img src={resolveImage(token.image)} className="w-10 h-10 rounded-full object-cover bg-slate-100 dark:bg-slate-800" onError={(e: any) => e.currentTarget.style.display = 'none'} />
+                                                <TokenImage token={token} />
                                             </div>
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-base">{token.symbol.toUpperCase()}</span>
@@ -378,44 +412,65 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                         </button>
                                     ))}
 
-                                    {/* Search Results or Top Tokens if no trending */}
-                                    {/* Only show displayList if query exists OR if we want to mix Top Tokens below trending? */}
-                                    {/* Let's show Top Tokens below trending if user scrolls, or just replace trending if query exists. */}
-
-                                    {query.length > 0 && displayList.map((token: any) => (
+                                    {/* Zora Search Result (New) */}
+                                    {zoraResult && (
+                                        <div className="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/30 flex items-center gap-2">
+                                            <span>Zora Metadata</span>
+                                        </div>
+                                    )}
+                                    {zoraResult && (
                                         <button
-                                            key={token.id}
-                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
-                                            onClick={() => handleSelect(token)}
+                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 bg-blue-50/50 dark:bg-blue-900/10"
+                                            onClick={() => handleSelect({
+                                                id: query,
+                                                symbol: zoraResult.symbol,
+                                                name: zoraResult.name,
+                                                image: zoraResult.mediaContent?.previewImage,
+                                                current_price: parseFloat(zoraResult.tokenPrice?.priceInUsdc || '0')
+                                            })}
                                         >
-                                            <img src={DEFAULT_LOGOS[token.symbol?.toLowerCase()] || resolveImage(token.image) || token.thumb} className="w-10 h-10 rounded-full" onError={(e: any) => e.currentTarget.style.display = 'none'} />
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-base">{token.symbol.toUpperCase()}</span>
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">{token.name}</span>
+                                            <div className="relative">
+                                                <TokenImage
+                                                    token={{
+                                                        symbol: zoraResult.symbol,
+                                                        mediaContent: zoraResult.mediaContent
+                                                    }}
+                                                />
+                                                <div className="absolute -bottom-1 -right-1 bg-blue-600 text-[10px] text-white px-1 rounded-full border border-blue-400 shadow-sm">
+                                                    Zora
+                                                </div>
                                             </div>
-                                            {token.market_cap_rank && (
-                                                <span className="ml-auto text-xs font-bold text-slate-400 dark:text-slate-600">#{token.market_cap_rank}</span>
-                                            )}
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-base">{zoraResult.symbol?.toUpperCase()}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">{zoraResult.name}</span>
+                                            </div>
+                                            <div className="ml-auto flex flex-col items-end">
+                                                <span className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">
+                                                    {zoraResult.tokenPrice?.priceInUsdc ?
+                                                        new Intl.NumberFormat('en-US', {
+                                                            style: 'currency',
+                                                            currency: 'USD',
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 6
+                                                        }).format(parseFloat(zoraResult.tokenPrice.priceInUsdc)) :
+                                                        '$0.00'
+                                                    }
+                                                </span>
+                                                <span className="text-[10px] font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-700/50 mt-1">MATCH</span>
+                                            </div>
                                         </button>
-                                    ))}
-
-                                    {query.length > 0 && searchResults?.length === 0 && !contractToken && (
-                                        <div className="p-6 text-center text-slate-500">No tokens found</div>
                                     )}
 
-                                    {/* Render Contract Token Result inside Search Tab if Query was proper address */}
-                                    {contractToken && isAddress && (
-                                        <button
-                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 bg-blue-50 dark:bg-blue-900/10"
-                                            onClick={() => handleSelect(contractToken)}
-                                        >
-                                            <img src={resolveImage(contractToken.image)} className="w-10 h-10 rounded-full" />
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-base">{contractToken.symbol.toUpperCase()}</span>
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">{contractToken.name}</span>
+                                    {query.length > 0 && !zoraResult && !isSearchingZora && (
+                                        <div className="p-8 text-center flex flex-col items-center justify-center gap-4 text-slate-500">
+                                            <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center mb-2">
+                                                <Search className="w-8 h-8 text-slate-400 dark:text-slate-600" />
                                             </div>
-                                            <span className="ml-auto text-xs font-mono text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 px-2 py-1 rounded">Contract</span>
-                                        </button>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-bold text-slate-900 dark:text-white">No Zora Coin Found</span>
+                                                <span className="text-xs max-w-[200px] mx-auto opacity-70">We couldn't find any Zora metadata for this address on Base.</span>
+                                            </div>
+                                        </div>
                                     )}
                                 </>
                             )}
