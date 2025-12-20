@@ -1,0 +1,85 @@
+{
+  "__typename": "GraphQLZora20CreatorToken",
+  "id": "R3JhcGhRTFpvcmEyMENyZWF0b3JUb2tlbjpCQVNFLU1BSU5ORVQuMHhmNTU0NmJmNjQ0NzViOGVjZTZhYzAzMWU5MmU0ZjkxYTg4ZDlkYzVl",
+  "platformBlocked": false,
+  "name": "scottexplores",
+  "description": "",
+  "address": "0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e",
+  "coinType": "CREATOR",
+  "symbol": "scottexplores",
+  "totalSupply": "1000000000",
+  "totalVolume": "655.4509466315626",
+  "volume24h": "16.59",
+  "createdAt": "2025-06-20T19:55:13",
+  "creatorAddress": "0xf75df98ececc8815a4b8a3211290569521f4734d",
+  "poolCurrencyToken": {
+    "address": "0x1111111111166b7fe7bd91427724b487980afc69",
+    "name": "ZORA",
+    "decimals": 18
+  },
+  "tokenPrice": {
+    "priceInUsdc": "0.000033645332480784438179522527429970191382",
+    "currencyAddress": "0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e",
+    "priceInPoolToken": "0.00078922926360200005256595456870627458556555211544036865234375"
+  },
+  "marketCap": "33645.15",
+  "marketCapDelta24h": "2445.56",
+  "chainId": 8453,
+  "tokenUri": "ipfs://bafybeifma6wj4aqjjzeiwjrl4m64li3f2k4zpvs4zx7ttct3kaknesov3m",
+  "platformReferrerAddress": "0x0000000000000000000000000000000000000000",
+  "payoutRecipientAddress": "0xf75df98ececc8815a4b8a3211290569521f4734d",
+  "creatorProfile": {
+    "__typename": "GraphQLAccountProfile",
+    "id": "R3JhcGhRTEFjY291bnRQcm9maWxlOjY4MGJkNzI3NWY4NDAwY2NiMmZkMDAzZA==",
+    "handle": "scottexplores",
+    "platformBlocked": false,
+    "avatar": {
+      "previewImage": {
+        "blurhash": null,
+        "medium": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:1200:1200/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWVpaDVvaHV1bTJhbDZhdHV6Z2k1dGJ1c3FiNGVtM3lxbHp4cHVndWs1b2x1Y2c1cDJsa2E=",
+        "small": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWVpaDVvaHV1bTJhbDZhdHV6Z2k1dGJ1c3FiNGVtM3lxbHp4cHVndWs1b2x1Y2c1cDJsa2E="
+      }
+    },
+    "socialAccounts": {
+      "instagram": null,
+      "tiktok": {
+        "username": "scott.explores",
+        "displayName": "Scott Explores",
+        "followerCount": 21,
+        "id": null
+      },
+      "twitter": {
+        "username": "ScottExplores29",
+        "displayName": "scottexplores.base.eth",
+        "followerCount": 2537,
+        "id": null
+      },
+      "farcaster": {
+        "username": "0xickflip",
+        "displayName": "Scott Explores",
+        "followerCount": 176,
+        "id": "353065"
+      }
+    },
+    "creatorCoin": {
+      "address": "0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e"
+    }
+  },
+  "mediaContent": {
+    "mimeType": null,
+    "originalUri": "ipfs://bafybeieih5ohuum2al6atuzgi5tbusqb4em3yqlzxpuguk5olucg5p2lka",
+    "previewImage": {
+      "small": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWVpaDVvaHV1bTJhbDZhdHV6Z2k1dGJ1c3FiNGVtM3lxbHp4cHVndWs1b2x1Y2c1cDJsa2E=",
+      "medium": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:1200:1200/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWVpaDVvaHV1bTJhbDZhdHV6Z2k1dGJ1c3FiNGVtM3lxbHp4cHVndWs1b2x1Y2c1cDJsa2E=",
+      "blurhash": null
+    }
+  },
+  "uniqueHolders": 39,
+  "uniswapV4PoolKey": {
+    "token0Address": "0x1111111111166b7fe7bd91427724b487980afc69",
+    "token1Address": "0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e",
+    "fee": 30000,
+    "tickSpacing": 200,
+    "hookAddress": "0x5e5d19d22c85a4aef7c1fdf25fb22a5a38f71040"
+  }
+}

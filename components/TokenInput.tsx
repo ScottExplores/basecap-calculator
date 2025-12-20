@@ -8,7 +8,7 @@ import { useTopTokens } from '@/hooks/useTopTokens';
 import { useAccount } from 'wagmi';
 import { useWalletTokens } from '@/hooks/useWalletTokens';
 import { useMoxieSearch } from '@/hooks/useMoxieSearch';
-import { handleCoinSearch } from '@/utils/searchHandler';
+import { handleCoinSearch, getSearchSuggestions } from '@/utils/searchHandler';
 import clsx from 'clsx';
 
 // User requested specific defaults
@@ -19,6 +19,41 @@ const DEFAULT_LOGOS: Record<string, string> = {
     'ethereum': 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
     'bitcoin': 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png'
 };
+
+const FEATURED_TOKENS = [
+    {
+        id: 'scottexplores',
+        name: 'Scott Explores',
+        symbol: 'scottexplores',
+        address: '0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e',
+        image: 'https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWVpaDVvaHV1bTJhbDZhdHV6Z2k1dGJ1c3FiNGVtM3lxbHp4cHVndWs1b2x1Y2c1cDJsa2E=',
+        current_price: 0
+    },
+    {
+        id: 'lani_loves',
+        name: 'lani_loves',
+        symbol: 'lani_loves',
+        address: '0xb6d6c6ede07db3cef403131bd85a26971e5c73aa',
+        image: 'https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWFwaWZ3c29sYmQ1YjNkNXl6ZzRseTU0ZmxkeHM2d28zd3czajRjeGc0Zmk0NW9heGltbmk=',
+        current_price: 0
+    },
+    {
+        id: 'jessepollak',
+        name: 'Jesse Pollak',
+        symbol: 'JESSEPOLLAK',
+        address: '0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59',
+        image: 'https://dd.dexscreener.com/ds-data/tokens/base/0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59.png', // DexScreener fallback or Zora if found
+        current_price: 0
+    },
+    {
+        id: 'crypticpoet',
+        name: 'crypticpoet',
+        symbol: 'crypticpoet',
+        address: '0x787b7b7117848c1f9fc79a8fa543202c231c1edb',
+        image: 'https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWhuNjR6b3hvZGNwazN1czY0Y29uZWtseHJ0N2ZkZTdkdHQ0YjVvYmNtZmlneDVtZm14c3U=',
+        current_price: 0
+    }
+];
 
 interface TokenInputProps {
     placeholder?: string;
@@ -81,6 +116,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     const [query, setQuery] = useState('');
     const [activeTab, setActiveTab] = useState<TabType>('crypto');
     const [isOpen, setIsOpen] = useState(false);
+    const [listMode, setListMode] = useState<'featured' | 'trending'>('featured');
 
     // Wallet Hooks
     const { isConnected } = useAccount();
@@ -103,10 +139,35 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     // Zora Search State
     const [zoraResult, setZoraResult] = useState<any>(null);
     const [isSearchingZora, setIsSearchingZora] = useState(false);
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false);
+
+    // Suggestions Fetching logic (faster/debounced API)
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (query.trim().length >= 2) {
+                setIsSearchingSuggestions(true);
+                try {
+                    const results = await getSearchSuggestions(query);
+                    setSuggestions(results);
+                } catch (error) {
+                    console.error("Suggestions fetch error:", error);
+                    setSuggestions([]);
+                } finally {
+                    setIsSearchingSuggestions(false);
+                }
+            } else {
+                setSuggestions([]);
+            }
+        };
+
+        const timer = setTimeout(fetchSuggestions, 300);
+        return () => clearTimeout(timer);
+    }, [query]);
 
     useEffect(() => {
         const performZoraSearch = async () => {
-            if (isAddress) {
+            if (query.trim().length >= 3) {
                 setIsSearchingZora(true);
                 try {
                     const result = await handleCoinSearch(query);
@@ -124,7 +185,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
 
         const timer = setTimeout(performZoraSearch, 300);
         return () => clearTimeout(timer);
-    }, [query, isAddress]);
+    }, [query]);
 
     // Refs
     const inputRef = useRef<HTMLInputElement>(null);
@@ -277,6 +338,44 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                 />
+
+                                {/* Suggestions Dropdown */}
+                                <AnimatePresence>
+                                    {suggestions.length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -5 }}
+                                            className="absolute left-3 right-3 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-[60] overflow-hidden"
+                                        >
+                                            <div className="flex flex-col">
+                                                {suggestions.map((coin: any) => (
+                                                    <button
+                                                        key={coin.address}
+                                                        className="w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-3 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
+                                                        onClick={() => {
+                                                            setQuery(coin.address); // Trigger full match
+                                                            setSuggestions([]); // Clear suggestions
+                                                        }}
+                                                    >
+                                                        <TokenImage
+                                                            token={{
+                                                                symbol: coin.symbol,
+                                                                mediaContent: coin.mediaContent
+                                                            }}
+                                                            className="w-6 h-6"
+                                                        />
+                                                        <div className="flex items-center gap-2 overflow-hidden">
+                                                            <span className="font-bold text-sm">{coin.symbol?.toUpperCase()}</span>
+                                                            <span className="text-xs text-slate-500 truncate">{coin.name}</span>
+                                                        </div>
+                                                        <span className="ml-auto text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/40 px-1.5 py-0.5 rounded">Zora</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         )}
 
@@ -353,16 +452,21 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                                 <TokenImage token={token} />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-base">{token.symbol.toUpperCase()}</span>
+                                                <span className="font-bold text-base flex items-center gap-2">
+                                                    {token.symbol.toUpperCase()}
+                                                    {typeof token.price_change_percentage_24h === 'number' && (
+                                                        <span className={clsx("text-xs font-mono", token.price_change_percentage_24h >= 0 ? "text-green-500" : "text-red-500")}>
+                                                            {token.price_change_percentage_24h > 0 ? '+' : ''}{token.price_change_percentage_24h.toFixed(2)}%
+                                                        </span>
+                                                    )}
+                                                </span>
                                                 <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[120px] truncate">{token.name}</span>
                                             </div>
                                             <div className="ml-auto flex flex-col items-end">
                                                 <span className="font-mono font-bold text-sm">${token.current_price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</span>
-                                                {typeof token.price_change_percentage_24h === 'number' && (
-                                                    <span className={clsx("text-xs font-mono", token.price_change_percentage_24h >= 0 ? "text-green-500" : "text-red-500")}>
-                                                        {token.price_change_percentage_24h > 0 ? '+' : ''}{token.price_change_percentage_24h.toFixed(2)}%
-                                                    </span>
-                                                )}
+                                                <span className="text-[10px] text-slate-500">
+                                                    MC: ${new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 2 }).format(token.market_cap)}
+                                                </span>
                                             </div>
                                         </button>
                                     ))}
@@ -376,13 +480,59 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                 <>
                                     {/* Trending / Recent Section when no query */}
                                     {query.length === 0 && (
-                                        <div className="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/30 flex items-center gap-2">
-                                            <Flame className="w-3 h-3 text-orange-500" />
-                                            <span>Featured & Trending on Base</span>
+                                        <div className="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/30 flex items-center gap-2 justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Flame className={clsx("w-3 h-3 transition-colors", listMode === 'trending' ? "text-orange-500" : "text-slate-400")} />
+                                                <button
+                                                    onClick={() => setListMode('featured')}
+                                                    className={clsx("transition-colors hover:text-blue-500", listMode === 'featured' ? "text-blue-600 dark:text-blue-400 underline decoration-2 decoration-blue-500 underline-offset-4" : "")}
+                                                >
+                                                    Featured
+                                                </button>
+                                                <span className="text-slate-300 dark:text-slate-700">|</span>
+                                                <button
+                                                    onClick={() => setListMode('trending')}
+                                                    className={clsx("transition-colors hover:text-orange-500", listMode === 'trending' ? "text-orange-600 dark:text-orange-400 underline decoration-2 decoration-orange-500 underline-offset-4" : "")}
+                                                >
+                                                    Trending
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
-                                    {query.length === 0 && trendingTokens?.map((token: any) => (
+                                    {query.length === 0 && listMode === 'featured' && FEATURED_TOKENS.map((token: any) => (
+                                        <button
+                                            key={token.id}
+                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50"
+                                            onClick={() => handleSelect({
+                                                id: token.address, // Ensure address is used for Zora coins
+                                                symbol: token.symbol,
+                                                name: token.name,
+                                                image: token.image,
+                                                current_price: token.current_price
+                                            })}
+                                        >
+                                            <div className="relative">
+                                                <img src={token.image} className="w-12 h-12 rounded-full object-cover bg-slate-100 dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700" />
+                                                <div className="absolute -bottom-1 -right-1 bg-blue-600 text-[10px] text-white px-1.5 py-0.5 rounded-full border border-blue-400 shadow-sm font-bold">
+                                                    Feat
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-lg flex items-center gap-2">
+                                                    {token.symbol.toUpperCase()}
+                                                </span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">{token.name}</span>
+                                            </div>
+                                            <div className="ml-auto">
+                                                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded-full font-bold">
+                                                    Recommended
+                                                </span>
+                                            </div>
+                                        </button>
+                                    ))}
+
+                                    {query.length === 0 && listMode === 'trending' && trendingTokens?.map((token: any) => (
                                         <button
                                             key={token.id}
                                             className="w-full text-left px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50"
@@ -407,7 +557,9 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                             </div>
                                             <div className="ml-auto flex flex-col items-end">
                                                 <span className="font-mono font-bold text-sm">${token.current_price?.toFixed(token.current_price < 0.01 ? 6 : 2)}</span>
-                                                <span className="text-[10px] text-slate-500">MC: ${(token.market_cap / 1000000).toFixed(1)}M</span>
+                                                <span className="text-[10px] text-slate-500">
+                                                    MC: ${new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 2 }).format(token.market_cap)}
+                                                </span>
                                             </div>
                                         </button>
                                     ))}
@@ -422,7 +574,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                         <button
                                             className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50 bg-blue-50/50 dark:bg-blue-900/10"
                                             onClick={() => handleSelect({
-                                                id: query,
+                                                id: zoraResult.address,
                                                 symbol: zoraResult.symbol,
                                                 name: zoraResult.name,
                                                 image: zoraResult.mediaContent?.previewImage,

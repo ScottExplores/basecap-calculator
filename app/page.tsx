@@ -18,8 +18,8 @@ export default function Home() {
   const { address, isConnected } = useAccount();
   const [farcasterUser, setFarcasterUser] = useState<any>(null);
 
-  // Initialize with $JESSE (Creator Coin) and BTC
-  const [tokenAId, setTokenAId] = useState<string | null>('0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59');
+  // Initialize with Scottexplores (Creator Coin) and BTC
+  const [tokenAId, setTokenAId] = useState<string | null>('0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e');
   const [tokenBId, setTokenBId] = useState<string | null>('bitcoin');
   const [amount, setAmount] = useState<number | string>(1);
 
@@ -85,26 +85,18 @@ export default function Home() {
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pr-4 pl-1 py-1 shadow-sm">
+          <div className="flex items-center gap-2">
             {farcasterUser?.pfpUrl ? (
               <img
                 src={farcasterUser.pfpUrl}
                 alt="Profile"
-                className="w-8 h-8 rounded-full border border-blue-500/30"
+                className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                <UserCircle className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-sm">
+                <UserCircle className="w-6 h-6" />
               </div>
             )}
-            <div className="flex flex-col">
-              <span className="text-xs font-bold leading-none mb-0.5">
-                {farcasterUser?.displayName || farcasterUser?.username || 'User'}
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono leading-none">
-                {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connecting...'}
-              </span>
-            </div>
           </div>
         </div>
       </div>

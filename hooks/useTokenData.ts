@@ -295,82 +295,8 @@ export function useTrendingTokens() {
     return useQuery({
         queryKey: ['trending-base-50-hybrid'],
         queryFn: async () => {
-            // 1. Defined "Creative/Meme" List (Verified Contract Addresses)
-            const PINNED_TOKENS = [
-                { id: 'jesse-pollak', symbol: 'jesse', address: '0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59', name: 'Jesse Pollak' },
-                { id: 'based-brett', symbol: 'brett', address: '0x532f27101965dd16442e59d40670faf5ebb142e4' },
-                { id: 'degen-base', symbol: 'degen', address: '0x4ed4e862860bed51a9570b96d89af5e1b0efefed' },
-                { id: 'toshi-base', symbol: 'toshi', address: '0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4' },
-                { id: 'higher', symbol: 'higher', address: '0x0578d8a44db98b23bf096a382e016e29a5ce0ffe' }, // Corrected Address
-                { id: 'keyboard-cat', symbol: 'keycat', address: '0x9a26f5433671751c3276a065f57e5a02d2817973' },
-                { id: 'mister-miggles', symbol: 'miggles', address: '0xb1a03eda10342529bbf8eb700a06c60441fef25d' },
-                { id: 'ski-mask-dog', symbol: 'ski', address: '0x768be13e1680b5ebe0024c42c896e3db59ec0149' },
-                { id: 'based-pepe', symbol: 'pepe', address: '0x52b492a33e447cdb854c7fc19f1e57e8bfa1777d' },
-                { id: 'mochi-the-cat-coin', symbol: 'mochi', address: '0xf6e932ca12afa26665dc4dde7e27be02a7c02e50' },
-                { id: 'doginme', symbol: 'doginme', address: '0x6921b130d297cc43754afba22e5eac0fbf8db75b' },
-                // Removed Bloo/Dawgz/Boomer/Caw due to missing DexScreener data causing low quality UI
-                { id: 'base-god', symbol: 'tybg', address: '0x0d97f261b1e88845184f678e2d1e7a98d9fd38de' },
-                { id: 'briun-armstrung', symbol: 'briun', address: '0x8c81b4c816d66d36c4bf348bdec01dbcbc70e987' },
-                { id: 'chuck-on-base', symbol: 'chuck', address: '0x7a8a5012022bccbf3ea4b03cd2bb5583d915fb1a' },
-                { id: 'basenji', symbol: 'benji', address: '0xbc45647ea894030a4e9801ec03479739fa2485f0' },
-                { id: 'normie-base', symbol: 'normie', address: '0x47b464edb8dc9bc67b5cd4c9310bb87b773845bd' }
-            ];
-
             try {
-                // 2. Fetch Prices for Pinned Tokens (DexScreener)
-                // Retrieve data for all pinned addresses in one go (comma separated, max 30 usually works)
-                const pinnedAddresses = PINNED_TOKENS.map(t => t.address).join(',');
-                const pinnedDataMap = new Map();
-
-                try {
-                    const dsResponse = await axios.get(`https://api.dexscreener.com/latest/dex/tokens/${pinnedAddresses}`);
-                    if (dsResponse.data?.pairs) {
-                        // DexScreener returns pairs, we need to find the best pair for each token
-                        // Simplest: group by baseToken.address and take highest liquidity or first
-                        dsResponse.data.pairs.forEach((pair: any) => {
-                            const baseAddr = pair.baseToken.address.toLowerCase();
-                            const quoteAddr = pair.quoteToken.address.toLowerCase();
-
-                            // Check Base Token Match
-                            if (!pinnedDataMap.has(baseAddr) || (pair.liquidity?.usd > (pinnedDataMap.get(baseAddr).liquidity || 0))) {
-                                pinnedDataMap.set(baseAddr, {
-                                    price: parseFloat(pair.priceUsd),
-                                    mcap: pair.fdv || pair.marketCap || 0,
-                                    change24h: pair.priceChange?.h24 || 0,
-                                    image: pair.info?.imageUrl,
-                                    liquidity: pair.liquidity?.usd || 0,
-                                    name: pair.baseToken.name,
-                                    symbol: pair.baseToken.symbol
-                                });
-                            }
-
-                            // Check Quote Token Match (e.g. Jesse) - ONLY if not found as Base yet or better validation?
-                            // Issue: We can't compare liquidity easily across Base/Quote overlap usually, but assuming we want ANY valid price.
-                            // Logic: If this pair involves our target as Quote, calculate Price.
-                            // Price of Quote = PriceUsd (of Base) / PriceNative (Base/Quote)
-                            if (!pinnedDataMap.has(quoteAddr)) { // Only if we don't have a Base Pair (usually Base pair is better source)
-                                const pUsd = parseFloat(pair.priceUsd);
-                                const pNative = parseFloat(pair.priceNative);
-                                if (pUsd && pNative) {
-                                    pinnedDataMap.set(quoteAddr, {
-                                        price: pUsd / pNative,
-                                        mcap: 0, // Cannot derive Mcap for Quote token easily
-                                        change24h: 0, // Cannot derive change easily without history
-                                        image: pair.info?.imageUrl, // Image might range from the quote token? (DexScreener usually puts Base Image in info?)
-                                        // Wait, pair.info usually refers to Base token. So image might be wrong if we take it from here.
-                                        // We should rely on Fallback Image for the pinning if missing.
-                                        liquidity: pair.liquidity?.usd || 0,
-                                        name: pair.quoteToken.name,
-                                        symbol: pair.quoteToken.symbol
-                                    });
-                                }
-                            }
-                        });
-                    }
-                } catch (e) { console.warn("DexScreener fetch failed for pinned", e); }
-
-
-                // 3. Fetch Top Base Tokens for backfill (Local Proxy)
+                // 1. Fetch Top Base Tokens (Local Proxy)
                 const cgResponse = await axios.get('/api/tokens', {
                     params: {
                         type: 'markets',
@@ -388,46 +314,12 @@ export function useTrendingTokens() {
                     market_cap: t.market_cap,
                     market_cap_rank: t.market_cap_rank,
                     price_change_24h: t.price_change_percentage_24h,
-                    address: t.id // Fallback
+                    address: t.id, // Fallback
+                    price_change_percentage_24h: t.price_change_percentage_24h // alias
                 }));
 
                 const finalList: any[] = [];
                 const seenSymbols = new Set<string>();
-
-                // 4. Construct Pinned List with Real Data
-                for (const pin of PINNED_TOKENS) {
-                    const addr = pin.address.toLowerCase();
-                    const dsData = pinnedDataMap.get(addr);
-
-                    // Priority: DexScreener Data -> CoinGecko Match -> Default 0
-                    const cgMatch = cgTokens.find((t: any) => t.symbol.toLowerCase() === pin.symbol.toLowerCase());
-
-                    const price = dsData?.price || cgMatch?.current_price || 0;
-                    const mcap = dsData?.mcap || cgMatch?.market_cap || 0;
-                    const change = dsData?.change24h || cgMatch?.price_change_24h || 0;
-                    // For Image: If dsData.image is BaseToken image (which might be wrong if we matched Quote), prefer pin fallback or CG.
-                    // Actually, if we matched Quote, dsData.image (from pair.info) is likely valid for the Pair, but usually pair.info.imageUrl is BaseToken.
-                    // So if we matched Quote, dsData.image might be the OTHER token. Safe to skip it.
-                    // Strategy: If dsData came from Quote match (mcap === 0 check?), ignore image from it?
-                    // Better: DexScreener fallback url uses address anyway.
-                    const image = cgMatch?.image || `https://dd.dexscreener.com/ds-data/tokens/base/${pin.address}.png`;
-                    const name = pin.name || (dsData?.mcap > 0 ? dsData.name : pin.name) || cgMatch?.name || pin.symbol;
-
-                    finalList.push({
-                        id: pin.address, // Use address as ID for consistency with onSelect
-                        symbol: pin.symbol,
-                        name: name,
-                        image: image,
-                        current_price: price,
-                        market_cap: mcap,
-                        price_change_24h: change,
-                        address: pin.address,
-                        price_change_percentage_24h: change // alias
-                    });
-                    seenSymbols.add(pin.symbol.toLowerCase());
-                }
-
-                // 5. Backfill
                 const STABLE_AND_WRAPPED = ['usdc', 'usdt', 'dai', 'weth', 'cbeth', 'axlusdc', 'ezeth', 'aeth', 'wbtc', 'eurc'];
 
                 for (const t of cgTokens) {

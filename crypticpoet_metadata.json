@@ -1,0 +1,90 @@
+{
+  "__typename": "GraphQLZora20CreatorToken",
+  "id": "R3JhcGhRTFpvcmEyMENyZWF0b3JUb2tlbjpCQVNFLU1BSU5ORVQuMHg3ODdiN2I3MTE3ODQ4YzFmOWZjNzlhOGZhNTQzMjAyYzIzMWMxZWRi",
+  "platformBlocked": false,
+  "name": "crypticpoet",
+  "description": "",
+  "address": "0x787b7b7117848c1f9fc79a8fa543202c231c1edb",
+  "coinType": "CREATOR",
+  "symbol": "crypticpoet",
+  "totalSupply": "1000000000",
+  "totalVolume": "365319.0944069421",
+  "volume24h": "674.63",
+  "createdAt": "2025-06-20T16:43:03",
+  "creatorAddress": "0x035d27da33593d6e4869ff0b6dff295e5089bc5a",
+  "poolCurrencyToken": {
+    "address": "0x1111111111166b7fe7bd91427724b487980afc69",
+    "name": "ZORA",
+    "decimals": 18
+  },
+  "tokenPrice": {
+    "priceInUsdc": "0.00029710468028153874167905854296068646429",
+    "currencyAddress": "0x787b7b7117848c1f9fc79a8fa543202c231c1edb",
+    "priceInPoolToken": "0.0069265391667170002343301149494436685927212238311767578125"
+  },
+  "marketCap": "296245.59",
+  "marketCapDelta24h": "28396.5",
+  "chainId": 8453,
+  "tokenUri": "ipfs://bafybeicwople5wwfnilvk7lhojuoluoqojw6hnax22cw5jpt5yr3s5ks6u",
+  "platformReferrerAddress": "0x0000000000000000000000000000000000000000",
+  "payoutRecipientAddress": "0x035d27da33593d6e4869ff0b6dff295e5089bc5a",
+  "creatorProfile": {
+    "__typename": "GraphQLAccountProfile",
+    "id": "R3JhcGhRTEFjY291bnRQcm9maWxlOjY1Y2QwZDExM2E4ZjBjNjY4ZjZlZDJjMw==",
+    "handle": "crypticpoet",
+    "platformBlocked": false,
+    "avatar": {
+      "previewImage": {
+        "blurhash": null,
+        "medium": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:1200:1200/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWhuNjR6b3hvZGNwazN1czY0Y29uZWtseHJ0N2ZkZTdkdHQ0YjVvYmNtZmlneDVtZm14c3U=",
+        "small": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWhuNjR6b3hvZGNwazN1czY0Y29uZWtseHJ0N2ZkZTdkdHQ0YjVvYmNtZmlneDVtZm14c3U="
+      }
+    },
+    "socialAccounts": {
+      "instagram": {
+        "username": "1crypticpoet",
+        "displayName": "Cryptic Poet",
+        "followerCount": 1266,
+        "id": null
+      },
+      "tiktok": {
+        "username": "1crypticpoet",
+        "displayName": "Cryptic Poet",
+        "followerCount": 230,
+        "id": null
+      },
+      "twitter": {
+        "username": "1CrypticPoet",
+        "displayName": "poet.base.eth",
+        "followerCount": 103181,
+        "id": null
+      },
+      "farcaster": {
+        "username": "crypticpoet",
+        "displayName": "poet.base.eth",
+        "followerCount": 4288,
+        "id": "238466"
+      }
+    },
+    "creatorCoin": {
+      "address": "0x787b7b7117848c1f9fc79a8fa543202c231c1edb"
+    }
+  },
+  "mediaContent": {
+    "mimeType": null,
+    "originalUri": "ipfs://bafybeihn64zoxodcpk3us64coneklxrt7fde7dtt4b5obcmfigx5mfmxsu",
+    "previewImage": {
+      "small": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWhuNjR6b3hvZGNwazN1czY0Y29uZWtseHJ0N2ZkZTdkdHQ0YjVvYmNtZmlneDVtZm14c3U=",
+      "medium": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:1200:1200/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWhuNjR6b3hvZGNwazN1czY0Y29uZWtseHJ0N2ZkZTdkdHQ0YjVvYmNtZmlneDVtZm14c3U=",
+      "blurhash": null
+    }
+  },
+  "uniqueHolders": 7351,
+  "uniswapV4PoolKey": {
+    "token0Address": "0x1111111111166b7fe7bd91427724b487980afc69",
+    "token1Address": "0x787b7b7117848c1f9fc79a8fa543202c231c1edb",
+    "fee": 30000,
+    "tickSpacing": 200,
+    "hookAddress": "0x5e5d19d22c85a4aef7c1fdf25fb22a5a38f71040"
+  }
+}

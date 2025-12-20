@@ -1,0 +1,75 @@
+{
+  "__typename": "GraphQLZora20CreatorToken",
+  "id": "R3JhcGhRTFpvcmEyMENyZWF0b3JUb2tlbjpCQVNFLU1BSU5ORVQuMHgzMGUwOWUyODk3MTk1N2NmOTMzYjcxY2FiNmIxZGU3YTJmMDhmNGU3",
+  "platformBlocked": false,
+  "name": "jesse",
+  "description": "",
+  "address": "0x30e09e28971957cf933b71cab6b1de7a2f08f4e7",
+  "coinType": "CREATOR",
+  "symbol": "jesse",
+  "totalSupply": "1000000000",
+  "totalVolume": "6724.663617179354",
+  "volume24h": "0.0",
+  "createdAt": "2025-06-21T16:33:39",
+  "creatorAddress": "0x512330ccc8b2a5b1ec41f73c53afad71e89ea79b",
+  "poolCurrencyToken": {
+    "address": "0x1111111111166b7fe7bd91427724b487980afc69",
+    "name": "ZORA",
+    "decimals": 18
+  },
+  "tokenPrice": {
+    "priceInUsdc": "0.000064304153186109943011700305920450931885",
+    "currencyAddress": "0x30e09e28971957cf933b71cab6b1de7a2f08f4e7",
+    "priceInPoolToken": "0.001499092526215000005518351855471337330527603626251220703125"
+  },
+  "marketCap": "74715.31",
+  "marketCapDelta24h": "-1711.51",
+  "chainId": 8453,
+  "tokenUri": "ipfs://bafybeicvgggyyysvhqhfqyl2fx4gvcpeful6ksfdw5hcnlyiswscngq6lm",
+  "platformReferrerAddress": "0x0000000000000000000000000000000000000000",
+  "payoutRecipientAddress": "0x512330ccc8b2a5b1ec41f73c53afad71e89ea79b",
+  "creatorProfile": {
+    "__typename": "GraphQLAccountProfile",
+    "id": "R3JhcGhRTEFjY291bnRQcm9maWxlOjY1YjQyY2RlN2IxYzg2M2IxODc1M2IxYQ==",
+    "handle": "jesse",
+    "platformBlocked": false,
+    "avatar": {
+      "previewImage": {
+        "blurhash": null,
+        "medium": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:1200:1200/f:best/aHR0cHM6Ly9qZXNzZXdhbGRlbi5jb20vZmF2aWNvbi5wbmc=",
+        "small": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9qZXNzZXdhbGRlbi5jb20vZmF2aWNvbi5wbmc="
+      }
+    },
+    "socialAccounts": {
+      "instagram": null,
+      "tiktok": null,
+      "twitter": null,
+      "farcaster": {
+        "username": "jesse",
+        "displayName": "Jesse Walden",
+        "followerCount": 34993,
+        "id": "24"
+      }
+    },
+    "creatorCoin": {
+      "address": "0x30e09e28971957cf933b71cab6b1de7a2f08f4e7"
+    }
+  },
+  "mediaContent": {
+    "mimeType": null,
+    "originalUri": "https://jessewalden.com/favicon.png",
+    "previewImage": {
+      "small": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9qZXNzZXdhbGRlbi5jb20vZmF2aWNvbi5wbmc=",
+      "medium": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:1200:1200/f:best/aHR0cHM6Ly9qZXNzZXdhbGRlbi5jb20vZmF2aWNvbi5wbmc=",
+      "blurhash": null
+    }
+  },
+  "uniqueHolders": 31,
+  "uniswapV4PoolKey": {
+    "token0Address": "0x1111111111166b7fe7bd91427724b487980afc69",
+    "token1Address": "0x30e09e28971957cf933b71cab6b1de7a2f08f4e7",
+    "fee": 30000,
+    "tickSpacing": 200,
+    "hookAddress": "0x9278f6e55ce58519c79dc1ab0ad3b29ea7821040"
+  }
+}

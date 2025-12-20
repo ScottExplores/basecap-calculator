@@ -1,0 +1,75 @@
+{
+  "__typename": "GraphQLZora20CreatorToken",
+  "id": "R3JhcGhRTFpvcmEyMENyZWF0b3JUb2tlbjpCQVNFLU1BSU5ORVQuMHhiNmQ2YzZlZGUwN2RiM2NlZjQwMzEzMWJkODVhMjY5NzFlNWM3M2Fh",
+  "platformBlocked": false,
+  "name": "lani_loves",
+  "description": "",
+  "address": "0xb6d6c6ede07db3cef403131bd85a26971e5c73aa",
+  "coinType": "CREATOR",
+  "symbol": "lani_loves",
+  "totalSupply": "1000000000",
+  "totalVolume": "344.03121057383197",
+  "volume24h": "0.0",
+  "createdAt": "2025-08-10T22:57:41",
+  "creatorAddress": "0x202c7ccd3547b82854119de3d5f6e4748f9492f5",
+  "poolCurrencyToken": {
+    "address": "0x1111111111166b7fe7bd91427724b487980afc69",
+    "name": "ZORA",
+    "decimals": 18
+  },
+  "tokenPrice": {
+    "priceInUsdc": "0.0000079455991936243766963287552738306480351",
+    "currencyAddress": "0xb6d6c6ede07db3cef403131bd85a26971e5c73aa",
+    "priceInPoolToken": "0.00018523943805100000735419651931579210213385522365570068359375"
+  },
+  "marketCap": "9696.79",
+  "marketCapDelta24h": "-1520.36",
+  "chainId": 8453,
+  "tokenUri": "ipfs://bafybeifkrrwtmxgknm2xqcfudkck3c3ya4zaspv4fq55mm4snuapwcse7i",
+  "platformReferrerAddress": "0x0000000000000000000000000000000000000000",
+  "payoutRecipientAddress": "0x202c7ccd3547b82854119de3d5f6e4748f9492f5",
+  "creatorProfile": {
+    "__typename": "GraphQLAccountProfile",
+    "id": "R3JhcGhRTEFjY291bnRQcm9maWxlOjY4OTkyM2QzOTQ4ZTNiOGMxOGFhNDk4OA==",
+    "handle": "lani_loves",
+    "platformBlocked": false,
+    "avatar": {
+      "previewImage": {
+        "blurhash": null,
+        "medium": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:1200:1200/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWFwaWZ3c29sYmQ1YjNkNXl6ZzRseTU0ZmxkeHM2d28zd3czajRjeGc0Zmk0NW9heGltbmk=",
+        "small": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWFwaWZ3c29sYmQ1YjNkNXl6ZzRseTU0ZmxkeHM2d28zd3czajRjeGc0Zmk0NW9heGltbmk="
+      }
+    },
+    "socialAccounts": {
+      "instagram": null,
+      "tiktok": {
+        "username": "lani_loves_",
+        "displayName": "Lani_loves_",
+        "followerCount": 44,
+        "id": null
+      },
+      "twitter": null,
+      "farcaster": null
+    },
+    "creatorCoin": {
+      "address": "0xb6d6c6ede07db3cef403131bd85a26971e5c73aa"
+    }
+  },
+  "mediaContent": {
+    "mimeType": null,
+    "originalUri": "ipfs://bafybeiapifwsolbd5b3d5yzg4ly54fldxs6wo3ww3j4cxg4fi45oaximni",
+    "previewImage": {
+      "small": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWFwaWZ3c29sYmQ1YjNkNXl6ZzRseTU0ZmxkeHM2d28zd3czajRjeGc0Zmk0NW9heGltbmk=",
+      "medium": "https://scontent-iad4-1.choicecdn.com/-/rs:fit:1200:1200/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWFwaWZ3c29sYmQ1YjNkNXl6ZzRseTU0ZmxkeHM2d28zd3czajRjeGc0Zmk0NW9heGltbmk=",
+      "blurhash": null
+    }
+  },
+  "uniqueHolders": 13,
+  "uniswapV4PoolKey": {
+    "token0Address": "0x1111111111166b7fe7bd91427724b487980afc69",
+    "token1Address": "0xb6d6c6ede07db3cef403131bd85a26971e5c73aa",
+    "fee": 30000,
+    "tickSpacing": 200,
+    "hookAddress": "0xd61a675f8a0c67a73dc3b54fb7318b4d91409040"
+  }
+}
