@@ -88,7 +88,7 @@ export async function fetchCoinMetadata(coinAddress: string) {
         }
 
         // Strict Check: Ensure it is a Creator Token (prevents Standard tokens from triggering Zora UI)
-        if (tokenData.__typename !== 'GraphQLZora20CreatorToken') {
+        if ((tokenData as any).__typename !== 'GraphQLZora20CreatorToken') {
             return null;
         }
 
