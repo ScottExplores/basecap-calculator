@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { fetchCreatorCoin } from '../lib/fetchCreatorCoin';
-import { fetchCoinMetadata, fetchZoraGlobalLeaderboard } from '../utils/zora';
+import { fetchCoinMetadata } from '../utils/zora';
 
 export interface TokenData {
     id: string;
@@ -392,25 +392,4 @@ export function useTrendingTokens() {
     });
 }
 
-// Hook: useZoraLeaderboard
-// Purpose: Fetch Zora Leaderboard data
-export function useZoraLeaderboard() {
-    return useQuery({
-        queryKey: ['zora-leaderboard'],
-        queryFn: async () => {
-            const nodes = await fetchZoraGlobalLeaderboard(20);
-            return nodes.map((n: any) => ({
-                id: n.address,
-                symbol: n.symbol,
-                name: n.name,
-                image: typeof n.mediaContent?.previewImage === 'string'
-                    ? n.mediaContent.previewImage
-                    : ((n.mediaContent?.previewImage as any)?.url || ''),
-                current_price: parseFloat(n.tokenPrice?.priceInUsdc || '0'),
-                market_cap: parseFloat(n.marketCap || '0'),
-                price_change_24h: 0
-            }));
-        },
-        staleTime: 60000
-    });
-}
+

@@ -26,9 +26,9 @@ export function Footer() {
                 <div className="flex items-center gap-6">
                     <button
                         onClick={() => setIsBuyModalOpen(true)}
-                        className="hover:text-green-600 dark:hover:text-green-400 transition-colors flex items-center gap-2 font-bold bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-800 cursor-pointer"
+                        className="hover:text-green-600 dark:hover:text-green-400 transition-colors flex items-center gap-1.5 font-bold bg-green-50 dark:bg-green-900/20 px-2.5 py-1 text-xs rounded-full border border-green-200 dark:border-green-800 cursor-pointer"
                     >
-                        <Coins className="w-4 h-4" />
+                        <Coins className="w-3.5 h-3.5" />
                         <span>Buy my Creator Coin</span>
                     </button>
                     <a href="https://github.com/ScottExplores/basecap-calculator" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors flex items-center gap-2">
