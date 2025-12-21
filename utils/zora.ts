@@ -1,5 +1,43 @@
-import { getCoin, getProfileCoins, getProfile, getCoinsMostValuable, getCoinsNew, getMostValuableCreatorCoins } from "@zoralabs/coins-sdk";
+import { getCoin, getProfileCoins, getProfile, getCoinsMostValuable, getCoinsNew, getMostValuableCreatorCoins, tradeCoin } from "@zoralabs/coins-sdk";
 import { base } from "viem/chains";
+
+// Tool: tradeCreatorCoin
+// Purpose: Execute a buy transaction for a Zora Creator Coin
+export async function tradeCreatorCoin(
+    tokenAddress: string,
+    amountEth: string,
+    walletClient: any,
+    publicClient: any,
+    minAmountOut?: string
+) {
+    try {
+        if (!walletClient || !publicClient) throw new Error("Wallet or Public client missing");
+        const account = walletClient.account.address;
+
+        // Zora SDK tradeCoin expects tradeParameters wrappers
+        const result = await tradeCoin({
+            publicClient,
+            walletClient,
+            account,
+            tradeParameters: {
+                sell: {
+                    type: "eth",
+                },
+                buy: {
+                    type: "erc20",
+                    address: tokenAddress as `0x${string}`,
+                },
+                amountIn: BigInt(Math.floor(parseFloat(amountEth) * 1e18)),
+                sender: account,
+            }
+        });
+
+        return result;
+    } catch (error) {
+        console.error("Error trading creator coin:", error);
+        throw error;
+    }
+}
 
 // Tool: fetchCoinMetadata
 // Purpose: Retrieving name, symbol, and images for a token address on Base.
@@ -13,9 +51,15 @@ export async function fetchCoinMetadata(coinAddress: string) {
 
         // Check if data exists
         const tokenData = response.data?.zora20Token;
+        // console.log(`[Zora Debug] Metadata for ${coinAddress}:`, tokenData); // Clean up debug log
 
         if (!tokenData) {
-            console.warn(`No metadata found for ${coinAddress}`);
+            // console.warn(`No metadata found for ${coinAddress}`);
+            return null;
+        }
+
+        // Strict Check: Ensure it is a Creator Token (prevents Standard tokens from triggering Zora UI)
+        if (tokenData.__typename !== 'GraphQLZora20CreatorToken') {
             return null;
         }
 

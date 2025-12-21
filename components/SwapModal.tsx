@@ -1,9 +1,12 @@
 import { Buy } from '@coinbase/onchainkit/buy';
 import { Wallet, ConnectWallet } from '@coinbase/onchainkit/wallet';
-import { useAccount } from 'wagmi';
+import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
 import type { Token } from '@coinbase/onchainkit/token';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { TokenData } from '@/hooks/useTokenData';
+import { useState, useEffect } from 'react';
+import { fetchCoinMetadata, tradeCreatorCoin } from '@/utils/zora';
+import { parseEther } from 'viem';
 
 interface SwapModalProps {
     isOpen: boolean;
@@ -14,6 +17,54 @@ interface SwapModalProps {
 
 export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps) {
     const { address } = useAccount();
+    const { data: walletClient } = useWalletClient();
+    const publicClient = usePublicClient();
+
+    const [isCreatorCoin, setIsCreatorCoin] = useState(false);
+    const [isDetecting, setIsDetecting] = useState(false);
+    const [zoraBuyAmount, setZoraBuyAmount] = useState('');
+    const [isBuyingZora, setIsBuyingZora] = useState(false);
+    const [zoraError, setZoraError] = useState<string | null>(null);
+
+    // Detect if tokenOut is a Creator Coin
+    useEffect(() => {
+        const checkCreatorCoin = async () => {
+            if (isOpen && tokenOut?.address) {
+                setIsDetecting(true);
+                setIsCreatorCoin(false);
+                setZoraError(null);
+                try {
+                    // Start detection
+                    const metadata = await fetchCoinMetadata(tokenOut.address);
+                    // Use metadata existence as proxy for Zora Coin (since our fetcher uses Zora SDK)
+                    if (metadata) {
+                        setIsCreatorCoin(true);
+                    }
+                } catch (e) {
+                    console.error("Detection error:", e);
+                } finally {
+                    setIsDetecting(false);
+                }
+            }
+        };
+        checkCreatorCoin();
+    }, [isOpen, tokenOut]);
+
+    const handleZoraBuy = async () => {
+        if (!tokenOut?.address || !walletClient || !publicClient || !zoraBuyAmount) return;
+
+        setIsBuyingZora(true);
+        setZoraError(null);
+        try {
+            await tradeCreatorCoin(tokenOut.address, zoraBuyAmount, walletClient, publicClient);
+            onClose(); // Close on success (or we could show success state)
+        } catch (e: any) {
+            console.error("Zora Buy Failed:", e);
+            setZoraError(e.message || "Transaction failed");
+        } finally {
+            setIsBuyingZora(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -47,8 +98,8 @@ export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps
 
         // Validate Address (Allow empty string ONLY for ETH)
         if (symbol !== 'ETH' && (!addr || !addr.startsWith('0x'))) {
-            console.warn("Invalid Swap Token Address:", t.symbol, addr);
-            return undefined; // Will create empty state in Swap, preventing disabled button "stuck" state or showing defaults
+            // console.warn("Invalid Swap Token Address:", t.symbol, addr); // Suppress warn
+            return undefined;
         }
 
         return {
@@ -93,25 +144,71 @@ export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps
 
                 {/* Buy Interface */}
                 <div className="animate-in slide-in-from-bottom-5 duration-300">
-                    {address ? (
-                        toToken ? (
-                            <Buy
-                                toToken={toToken}
-                                fromToken={ethToken}
-                                experimental={{ useAggregator: true }}
-                            />
+                    {isDetecting ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                            <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                            <p>Checking token availability...</p>
+                        </div>
+                    ) : (
+                        address ? (
+                            isCreatorCoin ? (
+                                <div className="flex flex-col gap-4">
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
+                                        <p className="text-sm text-blue-800 dark:text-blue-200 font-medium mb-1">Creator Coin Detected</p>
+                                        <p className="text-xs text-blue-600 dark:text-blue-300">
+                                            This token is using Zora Protocol. Buying directly via Zora SDK.
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            Amount (ETH)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={zoraBuyAmount}
+                                            onChange={(e) => setZoraBuyAmount(e.target.value)}
+                                            placeholder="0.01"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none text-xl font-bold"
+                                        />
+                                    </div>
+
+                                    {zoraError && (
+                                        <div className="p-3 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900">
+                                            {zoraError}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={handleZoraBuy}
+                                        disabled={!zoraBuyAmount || isBuyingZora}
+                                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        {isBuyingZora && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        {isBuyingZora ? 'buying...' : `Buy ${tokenOut?.symbol || 'Token'}`}
+                                    </button>
+                                </div>
+                            ) : (
+                                toToken ? (
+                                    <Buy
+                                        toToken={toToken}
+                                        fromToken={ethToken}
+                                        experimental={{ useAggregator: true }}
+                                    />
+                                ) : (
+                                    <div className="text-center p-4 text-slate-500">
+                                        Invalid Token Data
+                                    </div>
+                                )
+                            )
                         ) : (
-                            <div className="text-center p-4 text-slate-500">
-                                Invalid Token Data
+                            <div className="flex flex-col items-center gap-4 py-8">
+                                <p className="text-slate-500">Please connect your wallet to buy.</p>
+                                <Wallet>
+                                    <ConnectWallet className="bg-blue-600" />
+                                </Wallet>
                             </div>
                         )
-                    ) : (
-                        <div className="flex flex-col items-center gap-4 py-8">
-                            <p className="text-slate-500">Please connect your wallet to buy.</p>
-                            <Wallet>
-                                <ConnectWallet className="bg-blue-600" />
-                            </Wallet>
-                        </div>
                     )}
                 </div>
             </div>

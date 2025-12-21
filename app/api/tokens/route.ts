@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
                     page: 1,
                     sparkline: false,
                     category: category || undefined,
+                    ids: searchParams.get('ids') || undefined,
                 },
                 timeout: 5000,
             });

@@ -61,7 +61,7 @@ interface TokenInputProps {
     onSelect: (token: { id: string; symbol: string; name: string; image?: string; current_price?: number } | null) => void;
 }
 
-type TabType = 'crypto' | 'top100' | 'wallet'; // Removed contracts, added top100
+type TabType = 'creator_coins' | 'crypto' | 'wallet'; // Renamed top100 to crypto
 
 // Helper to resolve image from various metadata structures (CG, DexScreener, Zora)
 const resolveImage = (img: any): string => {
@@ -114,7 +114,8 @@ function TokenImage({ token, className = "w-10 h-10" }: { token: any; className?
 
 export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputProps) {
     const [query, setQuery] = useState('');
-    const [activeTab, setActiveTab] = useState<TabType>('crypto');
+    const [activeTab, setActiveTab] = useState<TabType>('creator_coins');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [listMode, setListMode] = useState<'featured' | 'trending'>('featured');
 
@@ -122,19 +123,31 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     const { isConnected } = useAccount();
     const { tokens: walletTokens, isLoading: isLoadingWallet } = useWalletTokens();
 
+    // Debounce Query Effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedQuery(query);
+        }, 500); // 500ms debounce
+        return () => clearTimeout(timer);
+    }, [query]);
+
     // Data Hooks
-    const { data: searchResults } = useSearchTokens(query);
+    // Requests for specific tabs
+    const { data: searchResults } = useSearchTokens(activeTab === 'crypto' ? debouncedQuery : ''); // Only search CG if in Crypto tab and using debounced query
     const { data: trendingTokens, isLoading: isLoadingTrending } = useTrendingTokens();
     const { data: topTokens } = useTopTokens();
 
     // Contract Search Logic: Check if QUERY looks like a contract address OR ENS
+    // Only active in Creator Coins tab or if explicitly pasting an address? 
+    // User wants Creator Coins to be Zora APIs.
     const isAddress = (query.startsWith('0x') && query.length === 42) || query.toLowerCase().endsWith('.eth');
+
     // We use the 'query' as the address/input if it matches pattern
-    const { data: contractToken } = useTokenContract(isAddress ? query : '', 'base');
+    const { data: contractToken } = useTokenContract((activeTab === 'creator_coins' && isAddress) ? query : '', 'base');
 
     // Moxie Search for usernames (only if not an address and has length)
     // We use 'query' context
-    const { data: moxieTokens } = useMoxieSearch((!isAddress && query.startsWith('@')) ? query : '');
+    const { data: moxieTokens } = useMoxieSearch((activeTab === 'creator_coins' && !isAddress && query.startsWith('@')) ? query : '');
 
     // Zora Search State
     const [zoraResult, setZoraResult] = useState<any>(null);
@@ -142,10 +155,10 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false);
 
-    // Suggestions Fetching logic (faster/debounced API)
+    // Suggestions Fetching logic (faster/debounced API) - Only for Creator Coins
     useEffect(() => {
         const fetchSuggestions = async () => {
-            if (query.trim().length >= 2) {
+            if (activeTab === 'creator_coins' && query.trim().length >= 2 && !isAddress) {
                 setIsSearchingSuggestions(true);
                 try {
                     const results = await getSearchSuggestions(query);
@@ -167,7 +180,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
 
     useEffect(() => {
         const performZoraSearch = async () => {
-            if (query.trim().length >= 3) {
+            if (activeTab === 'creator_coins' && query.trim().length >= 3) {
                 setIsSearchingZora(true);
                 try {
                     const result = await handleCoinSearch(query);
@@ -185,16 +198,16 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
 
         const timer = setTimeout(performZoraSearch, 300);
         return () => clearTimeout(timer);
-    }, [query]);
+    }, [query, activeTab]);
 
     // Refs
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Default to Crypto tab on open
+    // Default to Creator Coins tab on open
     useEffect(() => {
         if (isOpen) {
-            setActiveTab('crypto');
+            setActiveTab('creator_coins');
         }
     }, [isOpen]);
 
@@ -224,14 +237,17 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     // Helper is now top-level
 
     // Filter top tokens if there is a query, but searchResults usually handles API search.
-    const displayList = (query.length > 0 ? searchResults : topTokens) || [];
+    // Filter top tokens if there is a query, but searchResults usually handles API search.
+    // If in top100 and searching, use searchResults. If in top100 and NOT searching, use topTokens.
+    // Filter top tokens if there is a query, but searchResults usually handles API search.
+    // If in crypto and searching, use searchResults. If in crypto and NOT searching, use topTokens.
+    const displayList = (activeTab === 'crypto' && query.length > 0) ? (searchResults || []) : (topTokens || []);
 
-    // Available tabs based on connection. Start with Search (crypto)
-    // Available tabs based on connection. Start with Search (crypto)
+    // Available tabs based on connection. Start with Search (creator_coins)
     // User requested "search section as the new default view" and "replace contracts with top 100"
 
-    const orderedTabs: TabType[] = ['crypto', 'top100', 'wallet'];
-    const visibleTabs: TabType[] = isConnected ? orderedTabs : ['crypto', 'top100'];
+    const orderedTabs: TabType[] = ['creator_coins', 'crypto', 'wallet'];
+    const visibleTabs: TabType[] = isConnected ? orderedTabs : ['creator_coins', 'crypto'];
 
 
     return (
@@ -319,7 +335,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                     )}
                                 >
                                     {tab === 'wallet' && <Wallet className="w-3 h-3" />}
-                                    {tab}
+                                    {tab === 'creator_coins' ? 'Creator Coins' : tab === 'crypto' ? 'Crypto' : tab}
                                 </button>
                             ))}
                         </div>
@@ -328,20 +344,21 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                         {/* Search / Input Area */}
                         {/* Show input for Crypto (Search) and now Top 100 too (to filter?) or just Crypto? */}
                         {/* Usually Top 100 is just a list, but maybe filterable. For now, only Crypto has search bar input by default behavior */}
-                        {(activeTab === 'crypto') && (
+                        {/* Search / Input Area - Visible for both Creator Coins and Crypto */}
+                        {(activeTab === 'creator_coins' || activeTab === 'crypto') && (
                             <div className="p-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                                 <input
                                     ref={inputRef}
                                     type="text"
                                     className="w-full bg-white dark:bg-slate-950 text-slate-900 dark:text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 border border-slate-200 dark:border-slate-800 placeholder-slate-400 dark:placeholder-slate-600 text-lg font-sans"
-                                    placeholder="Search by name or paste address..."
+                                    placeholder={activeTab === 'creator_coins' ? "Search creator coins (Zora)..." : "Search all crypto (CoinGecko)..."}
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                 />
 
-                                {/* Suggestions Dropdown */}
+                                {/* Suggestions Dropdown - ONLY for Creator Coins */}
                                 <AnimatePresence>
-                                    {suggestions.length > 0 && (
+                                    {activeTab === 'creator_coins' && suggestions.length > 0 && (
                                         <motion.div
                                             initial={{ opacity: 0, y: -5 }}
                                             animate={{ opacity: 1, y: 0 }}
@@ -419,7 +436,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                                         <span className="text-xs max-w-[200px] mx-auto opacity-70">We couldn't find any supported tokens in this wallet.</span>
                                                     </div>
                                                     <button
-                                                        onClick={() => setActiveTab('crypto')}
+                                                        onClick={() => setActiveTab('creator_coins')}
                                                         className="mt-2 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-sm font-bold bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-full border border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all"
                                                     >
                                                         Search all tokens
@@ -431,15 +448,17 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                 </div>
                             )}
 
-                            {activeTab === 'top100' && (
+                            {activeTab === 'crypto' && (
                                 <div className="flex flex-col">
-                                    {/* Header for Top 100 */}
-                                    <div className="px-5 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/30 flex justify-between">
-                                        <span>Token</span>
-                                        <span>Price / 24h</span>
-                                    </div>
+                                    {/* Header for Crypto */}
+                                    {(!query || query.length === 0) && (
+                                        <div className="px-5 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/30 flex justify-between">
+                                            <span>Token</span>
+                                            <span>Price / 24h</span>
+                                        </div>
+                                    )}
 
-                                    {topTokens?.map((token: any) => (
+                                    {displayList?.map((token: any) => (
                                         <button
                                             key={token.id}
                                             className="w-full text-left px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50"
@@ -470,13 +489,13 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                             </div>
                                         </button>
                                     ))}
-                                    {topTokens?.length === 0 && <div className="p-8 text-center text-slate-500">Loading top tokens...</div>}
+                                    {displayList?.length === 0 && <div className="p-8 text-center text-slate-500">Loading top tokens...</div>}
                                 </div>
                             )}
 
 
 
-                            {activeTab === 'crypto' && (
+                            {activeTab === 'creator_coins' && (
                                 <>
                                     {/* Trending / Recent Section when no query */}
                                     {query.length === 0 && (
