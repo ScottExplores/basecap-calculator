@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { fetchCreatorCoin } from '../lib/fetchCreatorCoin';
-import { fetchCoinMetadata } from '../utils/zora';
+import { fetchCoinMetadata, fetchZoraGlobalLeaderboard } from '../utils/zora';
 
 export interface TokenData {
     id: string;
@@ -21,8 +21,74 @@ export interface TokenData {
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
-// ... imports
+// Search Hook
+export function useSearchTokens(query: string) {
+    return useQuery({
+        queryKey: ['search', query],
+        queryFn: async () => {
+            if (!query || query.length < 2) return [];
 
+            // 1. Search for IDs first
+            const searchResponse = await axios.get('/api/tokens', {
+                params: {
+                    type: 'search',
+                    query
+                }
+            });
+
+            const coins = searchResponse.data.coins || [];
+            if (coins.length === 0) return [];
+
+            // 2. Get top 6 IDs to fetch rich market data
+            // We take a few more than 5 just in case some don't have market data
+            const topIds = coins.slice(0, 6).map((c: any) => c.id).join(',');
+
+            // 3. Fetch Market Data for these IDs via our proxy
+            try {
+                const marketsResponse = await axios.get('/api/tokens', {
+                    params: {
+                        type: 'markets',
+                        ids: topIds,
+                        per_page: 6
+                    }
+                });
+
+                // Map back to our TokenData fields
+                // Note: The markets endpoint returns full data (current_price, market_cap, etc.)
+                return marketsResponse.data.map((m: any) => ({
+                    id: m.id,
+                    symbol: m.symbol,
+                    name: m.name,
+                    image: m.image,
+                    current_price: m.current_price,
+                    market_cap: m.market_cap,
+                    market_cap_rank: m.market_cap_rank,
+                    price_change_percentage_24h: m.price_change_percentage_24h,
+                    address: m.id // Fallback address as ID for general coins
+                }));
+
+            } catch (error) {
+                console.warn("Failed to fetch rich market data for search, falling back to basic search results", error);
+                // Fallback: Return basic search results if markets fetch fails
+                return coins.slice(0, 5).map((c: any) => ({
+                    id: c.id,
+                    symbol: c.symbol,
+                    name: c.name,
+                    image: c.large || c.thumb,
+                    current_price: 0, // Missing in basic search
+                    market_cap: 0,    // Missing in basic search
+                    market_cap_rank: c.market_cap_rank,
+                    price_change_percentage_24h: 0,
+                    address: c.id
+                }));
+            }
+        },
+        enabled: query.length >= 2,
+        staleTime: 300000, // 5 minutes
+    });
+}
+
+// Single Token Data Hook
 export function useTokenData(tokenId: string) {
     return useQuery({
         queryKey: ['token', tokenId],
@@ -176,72 +242,7 @@ export function useTokenData(tokenId: string) {
     });
 }
 
-export function useSearchTokens(query: string) {
-    return useQuery({
-        queryKey: ['search', query],
-        queryFn: async () => {
-            if (!query || query.length < 2) return [];
-
-            // 1. Search for IDs first
-            const searchResponse = await axios.get('/api/tokens', {
-                params: {
-                    type: 'search',
-                    query
-                }
-            });
-
-            const coins = searchResponse.data.coins || [];
-            if (coins.length === 0) return [];
-
-            // 2. Get top 6 IDs to fetch rich market data
-            // We take a few more than 5 just in case some don't have market data
-            const topIds = coins.slice(0, 6).map((c: any) => c.id).join(',');
-
-            // 3. Fetch Market Data for these IDs via our proxy
-            try {
-                const marketsResponse = await axios.get('/api/tokens', {
-                    params: {
-                        type: 'markets',
-                        ids: topIds,
-                        per_page: 6
-                    }
-                });
-
-                // Map back to our TokenData fields
-                // Note: The markets endpoint returns full data (current_price, market_cap, etc.)
-                return marketsResponse.data.map((m: any) => ({
-                    id: m.id,
-                    symbol: m.symbol,
-                    name: m.name,
-                    image: m.image,
-                    current_price: m.current_price,
-                    market_cap: m.market_cap,
-                    market_cap_rank: m.market_cap_rank,
-                    price_change_percentage_24h: m.price_change_percentage_24h,
-                    address: m.id // Fallback address as ID for general coins
-                }));
-
-            } catch (error) {
-                console.warn("Failed to fetch rich market data for search, falling back to basic search results", error);
-                // Fallback: Return basic search results if markets fetch fails
-                return coins.slice(0, 5).map((c: any) => ({
-                    id: c.id,
-                    symbol: c.symbol,
-                    name: c.name,
-                    image: c.large || c.thumb,
-                    current_price: 0, // Missing in basic search
-                    market_cap: 0,    // Missing in basic search
-                    market_cap_rank: c.market_cap_rank,
-                    price_change_percentage_24h: 0,
-                    address: c.id
-                }));
-            }
-        },
-        enabled: query.length >= 2,
-        staleTime: 300000, // 5 minutes
-    });
-}
-
+// Contract Hook
 export function useTokenContract(contractAddress: string, platformId: string = 'base') {
     return useQuery({
         queryKey: ['contract', platformId, contractAddress],
@@ -339,6 +340,8 @@ export function useTokenContract(contractAddress: string, platformId: string = '
         staleTime: 300000,
     });
 }
+
+// Trending Tokens Hook
 export function useTrendingTokens() {
     return useQuery({
         queryKey: ['trending-base-50-hybrid'],
@@ -379,7 +382,6 @@ export function useTrendingTokens() {
                 }
 
                 return finalList;
-
             } catch (e) {
                 console.error("Error fetching trending:", e);
                 return [];
@@ -387,5 +389,28 @@ export function useTrendingTokens() {
         },
         staleTime: 60000 * 5, // 5 mins
         placeholderData: (prev) => prev
+    });
+}
+
+// Hook: useZoraLeaderboard
+// Purpose: Fetch Zora Leaderboard data
+export function useZoraLeaderboard() {
+    return useQuery({
+        queryKey: ['zora-leaderboard'],
+        queryFn: async () => {
+            const nodes = await fetchZoraGlobalLeaderboard(20);
+            return nodes.map((n: any) => ({
+                id: n.address,
+                symbol: n.symbol,
+                name: n.name,
+                image: typeof n.mediaContent?.previewImage === 'string'
+                    ? n.mediaContent.previewImage
+                    : ((n.mediaContent?.previewImage as any)?.url || ''),
+                current_price: parseFloat(n.tokenPrice?.priceInUsdc || '0'),
+                market_cap: parseFloat(n.marketCap || '0'),
+                price_change_24h: 0
+            }));
+        },
+        staleTime: 60000
     });
 }

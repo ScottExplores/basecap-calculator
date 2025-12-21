@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useSearchTokens, TokenData, useTokenContract, useTrendingTokens } from '@/hooks/useTokenData';
-import { Search, X, ChevronDown, Wallet, Flame, TrendingUp } from 'lucide-react';
+import { useSearchTokens, TokenData, useTokenContract, useTrendingTokens, useZoraLeaderboard } from '@/hooks/useTokenData';
+import { Search, X, ChevronDown, Wallet, Flame, TrendingUp, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTopTokens } from '@/hooks/useTopTokens';
 import { useAccount } from 'wagmi';
@@ -10,6 +10,7 @@ import { useWalletTokens } from '@/hooks/useWalletTokens';
 import { useMoxieSearch } from '@/hooks/useMoxieSearch';
 import { handleCoinSearch, getSearchSuggestions } from '@/utils/searchHandler';
 import clsx from 'clsx';
+import { fetchZoraGlobalLeaderboard } from '@/utils/zora'; // Ensure utils imported if needed or via hook
 
 // User requested specific defaults
 const DEFAULT_LOGOS: Record<string, string> = {
@@ -117,7 +118,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     const [activeTab, setActiveTab] = useState<TabType>('creator_coins');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
-    const [listMode, setListMode] = useState<'featured' | 'trending'>('featured');
+    const [listMode, setListMode] = useState<'featured' | 'leaderboard'>('featured'); // trending now means "Leaderboard"
 
     // Wallet Hooks
     const { isConnected } = useAccount();
@@ -134,7 +135,13 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     // Data Hooks
     // Requests for specific tabs
     const { data: searchResults } = useSearchTokens(activeTab === 'crypto' ? debouncedQuery : ''); // Only search CG if in Crypto tab and using debounced query
-    const { data: trendingTokens, isLoading: isLoadingTrending } = useTrendingTokens();
+    const { data: trendingTokens, isLoading: isLoadingTrending } = useTrendingTokens(); // Legacy hook, might still be used for generic crypto trending? Or remove if replacing entirely
+    // Wait, User said "Instead of having trending in the creator coins section". 
+    // We can keep useTrendingTokens for Crypto tab if we want, but for now focusing on Creator Coins tab replacement.
+
+    // Zora Leaderboard Hook
+    const { data: zoraLeaderboard, isLoading: isLoadingLeaderboard } = useZoraLeaderboard();
+
     const { data: topTokens } = useTopTokens();
 
     // Contract Search Logic: Check if QUERY looks like a contract address OR ENS
@@ -501,7 +508,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                     {query.length === 0 && (
                                         <div className="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/30 flex items-center gap-2 justify-between">
                                             <div className="flex items-center gap-2">
-                                                <Flame className={clsx("w-3 h-3 transition-colors", listMode === 'trending' ? "text-orange-500" : "text-slate-400")} />
+                                                <Flame className={clsx("w-3 h-3 transition-colors", listMode === 'leaderboard' ? "text-blue-500" : "text-slate-400")} />
                                                 <button
                                                     onClick={() => setListMode('featured')}
                                                     className={clsx("transition-colors hover:text-blue-500", listMode === 'featured' ? "text-blue-600 dark:text-blue-400 underline decoration-2 decoration-blue-500 underline-offset-4" : "")}
@@ -510,10 +517,10 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                                 </button>
                                                 <span className="text-slate-300 dark:text-slate-700">|</span>
                                                 <button
-                                                    onClick={() => setListMode('trending')}
-                                                    className={clsx("transition-colors hover:text-orange-500", listMode === 'trending' ? "text-orange-600 dark:text-orange-400 underline decoration-2 decoration-orange-500 underline-offset-4" : "")}
+                                                    onClick={() => setListMode('leaderboard')}
+                                                    className={clsx("transition-colors hover:text-blue-500", listMode === 'leaderboard' ? "text-blue-600 dark:text-blue-400 underline decoration-2 decoration-blue-500 underline-offset-4" : "")}
                                                 >
-                                                    Trending
+                                                    Leaderboard
                                                 </button>
                                             </div>
                                         </div>
@@ -522,7 +529,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                     {query.length === 0 && listMode === 'featured' && FEATURED_TOKENS.map((token: any) => (
                                         <button
                                             key={token.id}
-                                            className="w-full text-left px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50"
+                                            className="w-full text-left px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50"
                                             onClick={() => handleSelect({
                                                 id: token.address, // Ensure address is used for Zora coins
                                                 symbol: token.symbol,
@@ -532,16 +539,14 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                             })}
                                         >
                                             <div className="relative">
-                                                <img src={token.image} className="w-12 h-12 rounded-full object-cover bg-slate-100 dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700" />
-                                                <div className="absolute -bottom-1 -right-1 bg-blue-600 text-[10px] text-white px-1.5 py-0.5 rounded-full border border-blue-400 shadow-sm font-bold">
+                                                <TokenImage token={token} />
+                                                <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-orange-500 to-amber-500 text-[9px] text-white px-1.5 py-px rounded-full border border-white/20 shadow-sm leading-none flex items-center">
                                                     Feat
                                                 </div>
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-lg flex items-center gap-2">
-                                                    {token.symbol.toUpperCase()}
-                                                </span>
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">{token.name}</span>
+                                                <span className="font-bold text-base">{token.name}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{token.symbol.toUpperCase()}</span>
                                             </div>
                                             <div className="ml-auto">
                                                 <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded-full font-bold">
@@ -551,37 +556,42 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
                                         </button>
                                     ))}
 
-                                    {query.length === 0 && listMode === 'trending' && trendingTokens?.map((token: any) => (
+                                    {/* Leaderboard List (Zora) */}
+                                    {query.length === 0 && listMode === 'leaderboard' && zoraLeaderboard?.map((token: any, index: number) => (
                                         <button
                                             key={token.id}
                                             className="w-full text-left px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-4 text-slate-900 dark:text-white transition-colors border-b border-slate-100 dark:border-slate-800/50"
                                             onClick={() => handleSelect(token)}
                                         >
+                                            <div className="flex items-center justify-center w-6 h-6 font-bold text-xs text-slate-400 mr-1">
+                                                {index + 1}
+                                            </div>
                                             <div className="relative">
-                                                <img src={resolveImage(token.image)} className="w-10 h-10 rounded-full object-cover bg-slate-100 dark:bg-slate-800" onError={(e: any) => e.currentTarget.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=random`} />
-                                                <div className="absolute -bottom-1 -right-1 bg-slate-900 text-[10px] text-white px-1 rounded-full border border-slate-700">
-                                                    Base
+                                                <TokenImage token={token} />
+                                                <div className="absolute -bottom-1 -right-1 bg-blue-600 text-[10px] text-white px-1 rounded-full border border-blue-400 shadow-sm">
+                                                    Zora
                                                 </div>
                                             </div>
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-base flex items-center gap-2">
                                                     {token.symbol.toUpperCase()}
-                                                    {token.price_change_24h && (
-                                                        <span className={clsx("text-xs font-mono", token.price_change_24h >= 0 ? "text-green-500" : "text-red-500")}>
-                                                            {token.price_change_24h > 0 ? '+' : ''}{token.price_change_24h}%
-                                                        </span>
-                                                    )}
                                                 </span>
                                                 <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[150px] truncate">{token.name}</span>
                                             </div>
                                             <div className="ml-auto flex flex-col items-end">
                                                 <span className="font-mono font-bold text-sm">${token.current_price?.toFixed(token.current_price < 0.01 ? 6 : 2)}</span>
-                                                <span className="text-[10px] text-slate-500">
-                                                    MC: ${new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 2 }).format(token.market_cap)}
-                                                </span>
+                                                {/* Zora SDK raw volume data might be handy if we want to show it instead of MC */}
+                                                {/* For now keeping price */}
                                             </div>
                                         </button>
                                     ))}
+                                    {query.length === 0 && listMode === 'leaderboard' && (!zoraLeaderboard || zoraLeaderboard.length === 0) && (
+                                        <div className="p-8 text-center text-slate-500">
+                                            {isLoadingLeaderboard ? (
+                                                <div className="flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
+                                            ) : "No leaderboard data"}
+                                        </div>
+                                    )}
 
                                     {/* Zora Search Result (New) */}
                                     {zoraResult && (

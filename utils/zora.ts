@@ -1,5 +1,34 @@
-import { getCoin, getProfileCoins, getProfile, getCoinsMostValuable, getCoinsNew, getMostValuableCreatorCoins, tradeCoin } from "@zoralabs/coins-sdk";
+import { getCoin, getProfileCoins, getProfile, getCoinsMostValuable, getCoinsNew, getMostValuableCreatorCoins, tradeCoin, getCoinsTopVolume24h, setApiKey } from "@zoralabs/coins-sdk";
 import { base } from "viem/chains";
+
+// Set up Zora API Key if available
+if (process.env.NEXT_PUBLIC_ZORA_API_KEY) {
+    setApiKey(process.env.NEXT_PUBLIC_ZORA_API_KEY);
+}
+
+// Tool: fetchZoraGlobalLeaderboard
+// Purpose: Fetch global leaderboard data (using getMostValuableCreatorCoins as getFeaturedCreators is not available)
+export async function fetchZoraGlobalLeaderboard(count: number = 10) {
+    try {
+        const response = await getMostValuableCreatorCoins({
+            count
+        });
+
+        // console.log("Zora Leaderboard (Most Valuable):", response);
+
+        const nodes = (response as any).data?.zora20Tokens?.nodes;
+
+        if (!nodes) {
+            console.warn("Zora Leaderboard: No nodes found", response);
+            return [];
+        }
+
+        return nodes;
+    } catch (error) {
+        console.error("Error fetching Zora leaderboard:", error);
+        return [];
+    }
+}
 
 // Tool: tradeCreatorCoin
 // Purpose: Execute a buy transaction for a Zora Creator Coin
