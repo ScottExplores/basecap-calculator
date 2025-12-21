@@ -63,7 +63,7 @@ export default function Home() {
   )?.balance : undefined;
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col items-center p-4 md:p-8 font-sans selection:bg-blue-500/30 relative overflow-hidden transition-colors duration-300">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col items-center px-4 pb-4 pt-3 md:px-8 md:pb-8 md:pt-6 font-sans selection:bg-blue-500/30 relative overflow-hidden transition-colors duration-300">
 
       <SwapModal
         isOpen={isSwapModalOpen}
@@ -76,14 +76,16 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 blur-[100px] rounded-full pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-600/20 blur-[100px] rounded-full pointer-events-none z-0" />
 
-      <div className="w-full flex justify-between mb-8 relative z-10 gap-4 items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 relative bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.6)] border border-blue-400/30">
-          </div>
-          <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">CreatorCap</span>
+      <div className="w-full flex justify-between mb-2 md:mb-6 relative z-10 gap-4 items-center">
+        <div className="flex-1 min-w-0 pr-4">
+          <img
+            src="/logo.png"
+            alt="CreatorCap"
+            className="w-full max-w-[200px] md:max-w-[320px] h-auto object-contain object-left -my-2 md:-my-4"
+          />
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0">
           <ThemeToggle />
           <div className="flex items-center gap-2">
             {farcasterUser?.pfpUrl ? (
