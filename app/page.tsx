@@ -141,6 +141,7 @@ export default function Home() {
               placeholder="Select Target (e.g. BTC)"
               selectedToken={tokenB}
               onSelect={(t) => setTokenBId(t ? t.id : null)}
+              defaultTab="crypto"
             />
           </div>
         </div>
@@ -159,7 +160,10 @@ export default function Home() {
         </div>
 
       </div>
-      <Footer />
+      <Footer onBuyClick={() => {
+        setTokenAId('0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e'); // Switch to ScottExplores
+        setIsSwapModalOpen(true);
+      }} />
     </main>
   );
 }

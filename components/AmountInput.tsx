@@ -11,6 +11,24 @@ interface AmountInputProps {
 }
 
 export function AmountInput({ amount, onChange, symbol, userBalance }: AmountInputProps) {
+    // Helper to format with commas
+    const formatValue = (val: number | string) => {
+        if (!val) return '';
+        const str = val.toString();
+        const parts = str.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Remove commas to get raw number
+        const rawValue = e.target.value.replace(/,/g, '');
+        // Validate: allow empty or valid number (including just "." or "12.")
+        if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+            onChange(rawValue);
+        }
+    };
+
     return (
         <div className="w-full">
             <div className="relative group">
@@ -19,13 +37,14 @@ export function AmountInput({ amount, onChange, symbol, userBalance }: AmountInp
                 </label>
                 <div className="flex items-center bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500 transition-all shadow-sm">
                     <input
-                        type="number"
-                        value={amount}
-                        onChange={(e) => onChange(e.target.value)}
+                        type="text"
+                        inputMode="decimal"
+                        value={formatValue(amount)}
+                        onChange={handleChange}
                         onFocus={(e) => e.target.select()}
                         className="bg-transparent text-xl md:text-2xl font-black text-slate-900 dark:text-white focus:outline-none w-full placeholder-slate-400 dark:placeholder-slate-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="1"
-                        min="0"
+                        autoComplete="off"
                     />
                     {symbol && (
                         <div className="flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-800 ml-2">

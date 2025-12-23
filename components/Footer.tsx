@@ -2,21 +2,14 @@
 
 import { Github, Coins } from 'lucide-react';
 import { useState } from 'react';
-import { BuyCreatorCoinModal } from './BuyCreatorCoinModal';
-
-export function Footer() {
-    const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+export function Footer({ onBuyClick }: { onBuyClick?: () => void }) {
 
     return (
         <>
-            <BuyCreatorCoinModal
-                isOpen={isBuyModalOpen}
-                onClose={() => setIsBuyModalOpen(false)}
-            />
             <footer className="w-full py-8 text-slate-500 dark:text-slate-500 text-sm flex flex-col items-center justify-center gap-6 border-t border-slate-200 dark:border-slate-800/50 mt-12 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm px-6 rounded-t-2xl z-0">
                 <div className="flex items-center gap-6">
                     <button
-                        onClick={() => setIsBuyModalOpen(true)}
+                        onClick={onBuyClick}
                         className="hover:text-green-600 dark:hover:text-green-400 transition-colors flex items-center gap-1.5 font-bold bg-green-50 dark:bg-green-900/20 px-2.5 py-1 text-xs rounded-full border border-green-200 dark:border-green-800 cursor-pointer"
                     >
                         <Coins className="w-3.5 h-3.5" />

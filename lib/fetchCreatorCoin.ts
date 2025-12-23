@@ -122,6 +122,10 @@ export async function fetchCreatorCoin(input: string): Promise<CreatorCoinRespon
 
         const supplyFormatted = Number(formatUnits(totalSupply, decimals));
 
+        // Zora Creator Coins have a 50% / 50% split (Liquid / Vested).
+        // To emphasize potential upside and show accurate "Circulating Market Cap", we use 50% of the total supply.
+        const circulatingSupply = supplyFormatted / 2;
+
         // 3. (Optional) ETH Price - skipping for speed if not needed directly here, but fine to keep if used elsewhere.
 
         // 4. Fetch Token Price & BTC Price
@@ -146,7 +150,7 @@ export async function fetchCreatorCoin(input: string): Promise<CreatorCoinRespon
             console.warn('Price fetch failed', e);
         }
 
-        const marketCap = supplyFormatted * tokenPriceUsd;
+        const marketCap = circulatingSupply * tokenPriceUsd;
 
         // 5. Zora Metadata (Refined Query)
         let zoraData: any = {};
@@ -201,7 +205,7 @@ export async function fetchCreatorCoin(input: string): Promise<CreatorCoinRespon
                 name,
                 symbol,
                 address,
-                supply: supplyFormatted.toLocaleString(),
+                supply: circulatingSupply.toLocaleString(),
                 decimals,
                 image: zoraData.image?.url || `https://dd.dexscreener.com/ds-data/tokens/base/${address}.png`, // FALLBACK ADDED
                 creator: {

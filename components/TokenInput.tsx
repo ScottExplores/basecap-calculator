@@ -59,6 +59,7 @@ interface TokenInputProps {
     placeholder?: string;
     selectedToken: TokenData | null | undefined;
     onSelect: (token: { id: string; symbol: string; name: string; image?: string; current_price?: number } | null) => void;
+    defaultTab?: TabType;
 }
 
 type TabType = 'creator_coins' | 'crypto' | 'wallet'; // Renamed top100 to crypto
@@ -112,9 +113,9 @@ function TokenImage({ token, className = "w-10 h-10" }: { token: any; className?
     );
 }
 
-export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputProps) {
+export function TokenInput({ placeholder, selectedToken, onSelect, defaultTab = 'creator_coins' }: TokenInputProps) {
     const [query, setQuery] = useState('');
-    const [activeTab, setActiveTab] = useState<TabType>('creator_coins');
+    const [activeTab, setActiveTab] = useState<TabType>(defaultTab); // Initialize with prop
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
 
@@ -209,9 +210,9 @@ export function TokenInput({ placeholder, selectedToken, onSelect }: TokenInputP
     // Default to Creator Coins tab on open
     useEffect(() => {
         if (isOpen) {
-            setActiveTab('creator_coins');
+            setActiveTab(defaultTab);
         }
-    }, [isOpen]);
+    }, [isOpen, defaultTab]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {

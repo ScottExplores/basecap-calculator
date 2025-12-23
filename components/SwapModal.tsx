@@ -1,6 +1,6 @@
 import { Buy } from '@coinbase/onchainkit/buy';
 import { Wallet, ConnectWallet } from '@coinbase/onchainkit/wallet';
-import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
+import { useAccount, useWalletClient, usePublicClient, useBalance } from 'wagmi';
 import type { Token } from '@coinbase/onchainkit/token';
 import { X, Loader2 } from 'lucide-react';
 import { TokenData } from '@/hooks/useTokenData';
@@ -19,6 +19,7 @@ export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps
     const { address } = useAccount();
     const { data: walletClient } = useWalletClient();
     const publicClient = usePublicClient();
+    const { data: dataBalance } = useBalance({ address });
 
     const [isCreatorCoin, setIsCreatorCoin] = useState(false);
     const [isDetecting, setIsDetecting] = useState(false);
@@ -161,9 +162,14 @@ export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                            Amount (ETH)
-                                        </label>
+                                        <div className="flex justify-between items-center text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            <label>Amount (ETH)</label>
+                                            {address && (
+                                                <span className="text-xs text-slate-500 font-mono">
+                                                    Balance: {dataBalance ? Number(dataBalance.formatted).toFixed(4) : '...'} ETH
+                                                </span>
+                                            )}
+                                        </div>
                                         <input
                                             type="number"
                                             value={zoraBuyAmount}
@@ -171,6 +177,9 @@ export function SwapModal({ isOpen, onClose, tokenIn, tokenOut }: SwapModalProps
                                             placeholder="0.01"
                                             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none text-xl font-bold"
                                         />
+                                        <p className="text-xs text-amber-600 dark:text-amber-400 font-medium italic">
+                                            Note: You need some Ethereum to swap.
+                                        </p>
                                     </div>
 
                                     {zoraError && (

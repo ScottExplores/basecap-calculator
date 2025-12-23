@@ -138,15 +138,58 @@ export function MarketCapDisplay({ tokenA, tokenB, amount = 1, onAmountChange, o
             {/* Projected Value (Moved) */}
             <div className="flex flex-col items-center text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
                 <div className="text-sm font-bold text-blue-700 dark:text-blue-400 mb-1 tracking-wider uppercase">Projected Value</div>
-                <div className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-violet-700 dark:from-white dark:to-slate-200 tracking-tighter filter drop-shadow-sm mb-2">
-                    {formatMoney(totalValue)}
-                </div>
+                {/* Dynamic resizing for large numbers - Aggressive "Fit to width" feel */}
+                {(() => {
+                    // Custom formatter for the Big Projection Number
+                    // If value is small (< $2.00), show decimals (up to 6 for very small).
+                    // If value is large (> $2.00), show integers only (no decimals).
+                    const isSmallValue = totalValue < 2;
+                    const bigValueFormatter = new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: isSmallValue ? 2 : 0,
+                        maximumFractionDigits: isSmallValue ? (totalValue < 0.01 ? 6 : 2) : 0,
+                    });
+
+                    const params = bigValueFormatter.format(totalValue);
+                    const len = params.length;
+                    let sizeClass = "text-5xl md:text-7xl"; // Default (up to ~15 chars)
+
+                    // Only step down when we really run out of room
+                    if (len > 35) sizeClass = "text-xl md:text-3xl";     // Extreme
+                    else if (len > 28) sizeClass = "text-2xl md:text-4xl"; // Very Long
+                    else if (len > 22) sizeClass = "text-3xl md:text-5xl"; // Long (Trillions+)
+                    else if (len > 16) sizeClass = "text-4xl md:text-6xl"; // Moderate (Billions)
+
+                    return (
+                        <div className={`${sizeClass} font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-violet-700 dark:from-white dark:to-slate-200 tracking-tighter filter drop-shadow-sm mb-2 transition-all duration-300 whitespace-nowrap`}>
+                            {params}
+                        </div>
+                    );
+                })()}
                 <div className="flex items-center gap-2">
-                    <div className={clsx("px-3 py-1 rounded-full text-sm font-bold border",
-                        multiplier > 1 ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20" : "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
-                    )}>
-                        {multiplier.toFixed(2)}x
-                    </div>
+                    <motion.div
+                        animate={multiplier > 1 ? {
+                            scale: [1, 1.05, 1],
+                            boxShadow: [
+                                "0 0 0px rgba(74, 222, 128, 0)",
+                                "0 0 15px rgba(74, 222, 128, 0.4)",
+                                "0 0 0px rgba(74, 222, 128, 0)"
+                            ]
+                        } : {}}
+                        transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                        className={clsx("px-4 py-1.5 rounded-full text-lg font-black border transition-colors shadow-sm",
+                            multiplier > 1
+                                ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20"
+                                : "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+                        )}
+                    >
+                        {Math.round(multiplier).toLocaleString()}x
+                    </motion.div>
                     <span className="text-slate-600 dark:text-slate-400 text-sm font-medium">potential upside</span>
                 </div>
             </div>
