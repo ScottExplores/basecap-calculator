@@ -17,6 +17,7 @@ export interface TokenData {
     decimals?: number;
     creator_name?: string;
     creator_avatar?: string;
+    isCustom?: boolean;
 }
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';

@@ -18,13 +18,18 @@ export default function Home() {
   const { address, isConnected } = useAccount();
   const [farcasterUser, setFarcasterUser] = useState<any>(null);
 
-  // Initialize with Scottexplores (Creator Coin) and BTC
-  const [tokenAId, setTokenAId] = useState<string | null>('0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e');
-  const [tokenBId, setTokenBId] = useState<string | null>('bitcoin');
+  // Selection state (can be partial objects from lists or custom objects)
+  const [selectedTokenA, setSelectedTokenA] = useState<any>({ id: '0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e' });
+  const [selectedTokenB, setSelectedTokenB] = useState<any>({ id: 'bitcoin' });
   const [amount, setAmount] = useState<number | string>(1);
 
-  const { data: tokenA } = useTokenData(tokenAId || '');
-  const { data: tokenB } = useTokenData(tokenBId || '');
+  // Auto-Hydrate Logic: Fetch full data whenever selection changes (unless custom)
+  const { data: hydratedA } = useTokenData(selectedTokenA?.isCustom ? '' : (selectedTokenA?.id || ''));
+  const { data: hydratedB } = useTokenData(selectedTokenB?.isCustom ? '' : (selectedTokenB?.id || ''));
+
+  // Use hydrated data if available, otherwise fallback to selection (partial data)
+  const tokenA = (hydratedA && hydratedA.id === selectedTokenA?.id) ? hydratedA : selectedTokenA;
+  const tokenB = (hydratedB && hydratedB.id === selectedTokenB?.id) ? hydratedB : selectedTokenB;
 
   const { setFrameReady } = useMiniKit();
 
@@ -47,9 +52,9 @@ export default function Home() {
   }, []);
 
   const handleSwap = () => {
-    const temp = tokenAId;
-    setTokenAId(tokenBId);
-    setTokenBId(temp);
+    const temp = selectedTokenA;
+    setSelectedTokenA(selectedTokenB);
+    setSelectedTokenB(temp);
   };
 
 
@@ -108,7 +113,7 @@ export default function Home() {
         {/* Header */}
         <div className="text-center space-y-4 max-w-2xl hidden md:block">
           <h1 className="text-3xl md:text-5xl font-black tracking-tight drop-shadow-lg leading-tight text-slate-900 dark:text-white">
-            Show the price of <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600">{tokenA ? tokenA.symbol.toUpperCase() : 'ETH'}</span> with the market cap of <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-violet-800 dark:from-violet-400 dark:to-violet-600">{tokenB ? tokenB.symbol.toUpperCase() : 'BTC'}</span>
+            Show the price of <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600">{tokenA?.symbol ? tokenA.symbol.toUpperCase() : 'TOKEN'}</span> with the market cap of <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-violet-800 dark:from-violet-400 dark:to-violet-600">{tokenB?.symbol ? tokenB.symbol.toUpperCase() : 'TARGET'}</span>
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-lg font-medium">
             Visualize potential growth and compare valuations
@@ -123,7 +128,8 @@ export default function Home() {
             <TokenInput
               placeholder="Select Token (e.g. ETH)"
               selectedToken={tokenA}
-              onSelect={(t) => setTokenAId(t ? t.id : null)}
+              onSelect={(t) => setSelectedTokenA(t)}
+              allowCustom={false}
             />
           </div>
 
@@ -140,8 +146,9 @@ export default function Home() {
             <TokenInput
               placeholder="Select Target (e.g. BTC)"
               selectedToken={tokenB}
-              onSelect={(t) => setTokenBId(t ? t.id : null)}
+              onSelect={(t) => setSelectedTokenB(t)}
               defaultTab="crypto"
+              allowCustom={true}
             />
           </div>
         </div>
@@ -161,7 +168,7 @@ export default function Home() {
 
       </div>
       <Footer onBuyClick={() => {
-        setTokenAId('0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e'); // Switch to ScottExplores
+        setSelectedTokenA({ id: '0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e' });
         setIsSwapModalOpen(true);
       }} />
     </main>

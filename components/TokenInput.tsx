@@ -22,7 +22,7 @@ const DEFAULT_LOGOS: Record<string, string> = {
 
 const FEATURED_TOKENS = [
     {
-        id: 'scottexplores',
+        id: '0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e',
         name: 'Scott Explores',
         symbol: 'scottexplores',
         address: '0xf5546bf64475b8ece6ac031e92e4f91a88d9dc5e',
@@ -30,7 +30,7 @@ const FEATURED_TOKENS = [
         current_price: 0
     },
     {
-        id: 'lani_loves',
+        id: '0xb6d6c6ede07db3cef403131bd85a26971e5c73aa',
         name: 'lani_loves',
         symbol: 'lani_loves',
         address: '0xb6d6c6ede07db3cef403131bd85a26971e5c73aa',
@@ -38,7 +38,7 @@ const FEATURED_TOKENS = [
         current_price: 0
     },
     {
-        id: 'jessepollak',
+        id: '0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59',
         name: 'Jesse Pollak',
         symbol: 'JESSEPOLLAK',
         address: '0x50f88fe97f72cd3e75b9eb4f747f59bceba80d59',
@@ -46,11 +46,19 @@ const FEATURED_TOKENS = [
         current_price: 0
     },
     {
-        id: 'crypticpoet',
+        id: '0x787b7b7117848c1f9fc79a8fa543202c231c1edb',
         name: 'crypticpoet',
         symbol: 'crypticpoet',
         address: '0x787b7b7117848c1f9fc79a8fa543202c231c1edb',
         image: 'https://scontent-iad4-1.choicecdn.com/-/rs:fit:600:600/f:best/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWhuNjR6b3hvZGNwazN1czY0Y29uZWtseHJ0N2ZkZTdkdHQ0YjVvYmNtZmlneDVtZm14c3U=',
+        current_price: 0
+    },
+    {
+        id: '0x9f62b62cf8cc3aea56a3ce8808cf13503d1131e7',
+        name: 'The Nick Shirley',
+        symbol: 'THENICKSHIRLEY',
+        address: '0x9f62b62cf8cc3aea56a3ce8808cf13503d1131e7',
+        image: 'https://dd.dexscreener.com/ds-data/tokens/base/0x9f62b62cf8cc3aea56a3ce8808cf13503d1131e7.png',
         current_price: 0
     }
 ];
@@ -58,11 +66,12 @@ const FEATURED_TOKENS = [
 interface TokenInputProps {
     placeholder?: string;
     selectedToken: TokenData | null | undefined;
-    onSelect: (token: { id: string; symbol: string; name: string; image?: string; current_price?: number } | null) => void;
+    onSelect: (token: TokenData | null) => void;
     defaultTab?: TabType;
+    allowCustom?: boolean;
 }
 
-type TabType = 'creator_coins' | 'crypto' | 'wallet'; // Renamed top100 to crypto
+type TabType = 'creator_coins' | 'crypto' | 'wallet' | 'custom'; // Added custom section
 
 // Helper to resolve image from various metadata structures (CG, DexScreener, Zora)
 const resolveImage = (img: any): string => {
@@ -113,11 +122,18 @@ function TokenImage({ token, className = "w-10 h-10" }: { token: any; className?
     );
 }
 
-export function TokenInput({ placeholder, selectedToken, onSelect, defaultTab = 'creator_coins' }: TokenInputProps) {
+export function TokenInput({
+    placeholder = "Select Token",
+    selectedToken,
+    onSelect,
+    defaultTab = 'creator_coins',
+    allowCustom = true
+}: TokenInputProps) {
     const [query, setQuery] = useState('');
     const [activeTab, setActiveTab] = useState<TabType>(defaultTab); // Initialize with prop
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
+    const [customMarketCap, setCustomMarketCap] = useState('');
 
     // Wallet Hooks
     const { isConnected } = useAccount();
@@ -226,15 +242,40 @@ export function TokenInput({ placeholder, selectedToken, onSelect, defaultTab = 
 
     const handleSelect = (token: any) => {
         onSelect({
-            id: token.id,
-            symbol: token.symbol,
-            name: token.name,
+            ...token,
             image: resolveImage(token.image || token.logoURI || token.mediaContent),
-            current_price: token.current_price || 0
+            current_price: token.current_price || 0,
+            market_cap: token.market_cap || 0,
+            market_cap_rank: token.market_cap_rank || 0,
+            price_change_percentage_24h: token.price_change_percentage_24h || 0,
+            ath: token.ath || 0
         });
         setIsOpen(false);
         setQuery('');
         // setContractAddress(''); // Removed state
+    };
+
+    const handleSelectCustom = () => {
+        if (!customMarketCap) return;
+        const mcap = parseFloat(customMarketCap.replace(/,/g, ''));
+        if (isNaN(mcap)) return;
+
+        onSelect({
+            id: `custom-mcap-${Date.now()}`,
+            symbol: 'Market Cap',
+            name: 'Market Cap',
+            image: '', // No image for custom
+            current_price: 0, // We'll display MC instead
+            market_cap: mcap,
+            market_cap_rank: 0,
+            price_change_percentage_24h: 0,
+            ath: 0,
+            isCustom: true
+        });
+
+        setIsOpen(false);
+        setQuery('');
+        setCustomMarketCap('');
     };
 
     // Helper is now top-level
@@ -249,8 +290,9 @@ export function TokenInput({ placeholder, selectedToken, onSelect, defaultTab = 
     // Available tabs based on connection. Start with Search (creator_coins)
     // User requested "search section as the new default view" and "replace contracts with top 100"
 
-    const orderedTabs: TabType[] = ['creator_coins', 'crypto', 'wallet'];
-    const visibleTabs: TabType[] = isConnected ? orderedTabs : ['creator_coins', 'crypto'];
+    const orderedTabs: TabType[] = ['creator_coins', 'crypto', 'wallet', 'custom'];
+    const visibleTabs = (isConnected ? orderedTabs : (['creator_coins', 'crypto', 'custom'] as TabType[]))
+        .filter(tab => tab !== 'custom' || allowCustom);
 
 
     return (
@@ -271,12 +313,16 @@ export function TokenInput({ placeholder, selectedToken, onSelect, defaultTab = 
                         <TokenImage token={selectedToken} />
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-baseline gap-2">
-                                <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white truncate">{selectedToken.symbol.toUpperCase()}</span>
-                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden sm:block">{selectedToken.name}</span>
+                                <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white truncate">{selectedToken?.symbol?.toUpperCase() || 'TOKEN'}</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden sm:block">{selectedToken?.name || ''}</span>
                             </div>
                         </div>
                         <div className="ml-auto flex flex-col items-end flex-shrink-0">
-                            {selectedToken.current_price > 0 && (
+                            {selectedToken?.isCustom ? (
+                                <span className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">
+                                    ${new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 2 }).format(selectedToken?.market_cap || 0)}
+                                </span>
+                            ) : (selectedToken?.current_price && selectedToken.current_price > 0) ? (
                                 <span className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">
                                     {new Intl.NumberFormat('en-US', {
                                         style: 'currency',
@@ -285,7 +331,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect, defaultTab = 
                                         maximumFractionDigits: selectedToken.current_price < 0.0001 ? 10 : 6
                                     }).format(selectedToken.current_price)}
                                 </span>
-                            )}
+                            ) : null}
                         </div>
                     </div>
                 ) : (
@@ -338,7 +384,7 @@ export function TokenInput({ placeholder, selectedToken, onSelect, defaultTab = 
                                     )}
                                 >
                                     {tab === 'wallet' && <Wallet className="w-3 h-3" />}
-                                    {tab === 'creator_coins' ? 'Creator Coins' : tab === 'crypto' ? 'Crypto' : tab}
+                                    {tab === 'creator_coins' ? 'Creator Coins' : tab === 'crypto' ? 'Crypto' : tab === 'custom' ? 'Custom' : tab}
                                 </button>
                             ))}
                         </div>
@@ -588,6 +634,71 @@ export function TokenInput({ placeholder, selectedToken, onSelect, defaultTab = 
                                         </div>
                                     )}
                                 </>
+                            )}
+
+                            {activeTab === 'custom' && (
+                                <div className="p-6 flex flex-col gap-6 bg-slate-50 dark:bg-slate-800/20">
+                                    <div className="flex flex-col gap-3">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Quick Presets</label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {[1000000, 10000000, 100000000, 250000000, 1000000000].map((val) => (
+                                                <button
+                                                    key={val}
+                                                    onClick={() => {
+                                                        const formatted = new Intl.NumberFormat('en-US').format(val);
+                                                        setCustomMarketCap(formatted);
+                                                    }}
+                                                    className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white text-slate-600 dark:text-slate-400 rounded-lg border border-slate-200 dark:border-slate-800 transition-all shadow-sm"
+                                                >
+                                                    ${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(val)}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Target Market Cap (USD)</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                className="w-full bg-white dark:bg-slate-950 text-slate-900 dark:text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 border border-slate-200 dark:border-slate-800 placeholder-slate-400 dark:placeholder-slate-600 text-2xl font-mono transition-all"
+                                                placeholder="e.g. 1,000,000"
+                                                value={customMarketCap}
+                                                onChange={(e) => {
+                                                    // Only allow numbers and decimal point
+                                                    const rawValue = e.target.value.replace(/[^0-9.]/g, '');
+                                                    if (rawValue === '') {
+                                                        setCustomMarketCap('');
+                                                        return;
+                                                    }
+
+                                                    const parts = rawValue.split('.');
+                                                    const integerPart = parts[0];
+                                                    const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+
+                                                    // Format with commas
+                                                    const formattedInteger = new Intl.NumberFormat('en-US').format(parseFloat(integerPart) || 0);
+
+                                                    // If the input was just '0', Intl.NumberFormat might return '0'. 
+                                                    // But we want to preserve empty if it was literally filtered out.
+                                                    setCustomMarketCap(formattedInteger + decimalPart);
+                                                }}
+                                            />
+                                        </div>
+                                        {customMarketCap && !isNaN(parseFloat(customMarketCap.replace(/,/g, ''))) && (
+                                            <div className="text-xs text-blue-500 font-bold ml-1">
+                                                Selected: ${new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 2 }).format(parseFloat(customMarketCap.replace(/,/g, '')))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={handleSelectCustom}
+                                        disabled={!customMarketCap}
+                                        className="w-full py-4 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 mt-2"
+                                    >
+                                        Use Custom Market Cap
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </motion.div>
